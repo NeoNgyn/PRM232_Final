@@ -1,0 +1,25 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:padding="20dp"
+    android:layout_width="match_parent" android:layout_height="wrap_content">
+
+    <TextView
+        android:id="@+id/tvMessage"
+        android:text="Xóa thực phẩm này?"
+        android:textSize="16sp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+
+    <LinearLayout android:orientation="horizontal"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginTop="16dp">
+
+        <Button
+            android:id="@+id/btnNo" android:text="Không"
+            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+
+        <Space android:layout_width="12dp" android:layout_height="wrap_content"/>
+
+        <Button
+            android:id="@+id/btnYes" android:text="Xóa"
+            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:textColor="@color/orange" android:background="@drawable/bg_button_outline_orange"/>
+    </LinearLayout>
+</LinearLayout>
