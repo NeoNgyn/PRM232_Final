@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFCF5"
+    tools:context=".MealDetailActivity">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/bottom_bar">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="300dp">
+
+                <ImageView
+                    android:id="@+id/iv_detail_meal_image"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop"
+                    tools:src="@drawable/placeholder_food" />
+
+                <ImageButton
+                    android:id="@+id/btn_back"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginTop="16dp"
+                    android:background="@drawable/circular_add_button_background"
+                    android:src="@drawable/ic_arrow_back" />
+
+                <TextView
+                    android:id="@+id/btn_more_text"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_gravity="end"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginEnd="16dp"
+                    android:background="@drawable/circular_add_button_background"
+                    android:gravity="center"
+                    android:text="⋮"
+                    android:textColor="@android:color/black"
+                    android:textSize="24sp"
+                    android:textStyle="bold" />
+
+            </FrameLayout>
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="16dp">
+
+                <TextView
+                    android:id="@+id/tv_detail_meal_name"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="16dp"
+                    android:layout_toStartOf="@+id/iv_heart"
+                    android:text="Coconut Curry Red Lentil Dahl with Tomatoes, Cilantro &amp; Rice."
+                    android:textColor="@android:color/black"
+                    android:textSize="24sp"
+                    android:textStyle="bold" />
+
+                <ImageView
+                    android:id="@+id/iv_heart"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_alignParentEnd="true"
+                    android:src="@drawable/ic_favorite_border" />
+
+                <TextView
+                    android:id="@+id/tv_detail_info"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/tv_detail_meal_name"
+                    android:layout_marginTop="8dp"
+                    android:text="35 minutes • 2 servings"
+                    android:textSize="16sp" />
+
+            </RelativeLayout>
+
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scrollbars="none"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp">
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/chip_group"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:singleLine="true"
+                    app:singleSelection="true">
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_cookware"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Cookware"
+                        android:textColor="@color/chip_text_color_selector"
+                        app:chipBackgroundColor="@color/chip_background_color_selector"
+                        app:chipStrokeColor="#ADADAD"
+                        app:chipStrokeWidth="1dp"
+                        android:checkable="true"
+                        app:checkedIconVisible="false" />
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_ingredients"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Ingredients"
+                        android:textColor="@color/chip_text_color_selector"
+                        app:chipBackgroundColor="@color/chip_background_color_selector"
+                        app:chipStrokeColor="#ADADAD"
+                        app:chipStrokeWidth="1dp"
+                        android:checkable="true"
+                        app:checkedIconVisible="false" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_instructions"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Instructions"
+                        android:textColor="@color/chip_text_color_selector"
+                        app:chipBackgroundColor="@color/chip_background_color_selector"
+                        app:chipStrokeColor="#ADADAD"
+                        app:chipStrokeWidth="1dp"
+                        android:checkable="true"
+                        app:checkedIconVisible="false" />
+
+                </com.google.android.material.chip.ChipGroup>
+            </HorizontalScrollView>
+
+            <TextView
+                android:id="@+id/tv_content_display"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingStart="16dp"
+                android:paddingTop="16dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="8dp"
+                android:text="can opener"
+                android:textColor="@android:color/black"
+                android:textSize="16sp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:background="#E0E0E0" />
+
+        </LinearLayout>
+    </ScrollView>
+
+    <LinearLayout
+        android:id="@+id/bottom_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="12dp"
+        android:background="#FFFFFF"
+        android:elevation="4dp"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <Button
+            android:id="@+id/btn_cooked"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="60dp"
+            android:layout_weight="1"
+            android:text="Cooked?"
+            android:textAllCaps="false"
+            android:layout_marginEnd="8dp"/>
+
+        <Button
+            android:id="@+id/btn_start_cooking"
+            android:layout_width="0dp"
+            android:layout_height="60dp"
+            android:layout_weight="1"
+            android:text="Start Cooking"
+            android:textAllCaps="false"
+            app:cornerRadius="12dp"
+            android:backgroundTint="#F9881F"
+            android:layout_marginStart="8dp"/>
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
