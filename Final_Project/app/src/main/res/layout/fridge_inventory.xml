@@ -1,0 +1,30 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent" android:background="@android:color/white">
+
+    <!-- Header -->
+    <RelativeLayout android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:padding="16dp">
+
+        <ImageButton
+            android:id="@+id/btnBack" android:layout_width="40dp" android:layout_height="40dp"
+            android:src="@drawable/ic_back" android:background="@null"/>
+
+        <TextView
+            android:id="@+id/tvTitle" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Tủ lạnh của tôi" android:textStyle="bold" android:textSize="18sp"
+            android:layout_centerInParent="true"/>
+
+        <!-- đổi ... thành dấu + -->
+        <ImageButton
+            android:id="@+id/btnAdd" android:layout_width="40dp" android:layout_height="40dp"
+            android:src="@drawable/ic_add" android:background="@null"
+            android:layout_alignParentEnd="true"/>
+    </RelativeLayout>
+
+    <!-- Danh sách -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerInventory"
+        android:layout_width="match_parent" android:layout_height="match_parent"
+        android:padding="8dp"/>
+</LinearLayout>
