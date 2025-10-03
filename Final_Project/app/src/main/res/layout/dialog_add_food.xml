@@ -1,40 +1,120 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical" android:padding="16dp"
-    android:layout_width="match_parent" android:layout_height="wrap_content">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:padding="20dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/white">
 
-    <EditText
-        android:id="@+id/etName" android:hint="Tên thực phẩm"
-        android:layout_width="match_parent" android:layout_height="wrap_content"/>
+    <!-- Header -->
+    <TextView
+        android:text="✨ Thêm thực phẩm mới"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="@color/orange"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:layout_marginBottom="20dp"/>
 
-    <EditText
-        android:id="@+id/etQty" android:inputType="numberDecimal" android:hint="Số lượng"
-        android:layout_marginTop="8dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+    <!-- Form Fields in Card -->
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="20dp"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="2dp"
+        app:cardBackgroundColor="@color/orange_background">
 
-    <EditText
-        android:id="@+id/etUnit" android:hint="Đơn vị (hộp, kg, quả...)"
-        android:layout_marginTop="8dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp">
 
-    <EditText
-        android:id="@+id/etExpiry" android:hint="Hạn dùng (dd/MM/yyyy)"
-        android:layout_marginTop="8dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+            <EditText
+                android:id="@+id/etName"
+                android:hint="🍎 Tên thực phẩm"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:background="@drawable/bg_edittext_improved"
+                android:layout_marginBottom="12dp"
+                android:textSize="16sp"/>
 
-    <EditText
-        android:id="@+id/etNotes" android:hint="Ghi chú"
-        android:layout_marginTop="8dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp">
 
+                <EditText
+                    android:id="@+id/etQty"
+                    android:inputType="numberDecimal"
+                    android:hint="📊 Số lượng"
+                    android:layout_width="0dp"
+                    android:layout_height="52dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_edittext_improved"
+                    android:layout_marginEnd="8dp"
+                    android:textSize="16sp"/>
+
+                <EditText
+                    android:id="@+id/etUnit"
+                    android:hint="📏 Đơn vị"
+                    android:layout_width="0dp"
+                    android:layout_height="52dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_edittext_improved"
+                    android:textSize="16sp"/>
+            </LinearLayout>
+
+            <EditText
+                android:id="@+id/etExpiry"
+                android:hint="📅 Hạn dùng (dd/MM/yyyy)"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:background="@drawable/bg_edittext_improved"
+                android:layout_marginBottom="12dp"
+                android:textSize="16sp"/>
+
+            <EditText
+                android:id="@+id/etNotes"
+                android:hint="📝 Ghi chú"
+                android:layout_width="match_parent"
+                android:layout_height="80dp"
+                android:background="@drawable/bg_edittext_improved"
+                android:gravity="top"
+                android:textSize="16sp"/>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <!-- Action Buttons -->
     <LinearLayout android:orientation="horizontal"
-        android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:layout_marginTop="12dp">
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
 
         <Button
-            android:id="@+id/btnCancel" android:text="Hủy"
-            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+            android:id="@+id/btnCancel"
+            android:text="❌ Hủy"
+            android:layout_width="0dp"
+            android:layout_height="52dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_button_secondary"
+            android:textColor="@color/orange"
+            android:textSize="16sp"
+            android:textStyle="bold"/>
 
-        <Space android:layout_width="12dp" android:layout_height="wrap_content"/>
+        <Space android:layout_width="16dp" android:layout_height="wrap_content"/>
 
         <Button
-            android:id="@+id/btnSave" android:text="Lưu"
-            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
-            android:textColor="@android:color/white" android:backgroundTint="@color/orange"/>
+            android:id="@+id/btnSave"
+            android:text="💾 Lưu"
+            android:layout_width="0dp"
+            android:layout_height="52dp"
+            android:layout_weight="1"
+            android:textColor="@color/white"
+            android:background="@drawable/bg_button_primary"
+            android:textSize="16sp"
+            android:textStyle="bold"/>
     </LinearLayout>
 </LinearLayout>
