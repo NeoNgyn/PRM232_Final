@@ -1,42 +1,127 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="horizontal" android:padding="10dp"
-    android:layout_width="match_parent" android:layout_height="wrap_content"
-    android:layout_margin="8dp" android:background="@drawable/bg_item_card"
-    android:gravity="center_vertical">
-
-    <ImageView
-        android:id="@+id/imgFood" android:layout_width="60dp" android:layout_height="60dp"
-        android:scaleType="centerCrop" android:src="@drawable/ic_launcher_foreground"
-        android:layout_marginEnd="12dp"/>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="3dp"
+    app:cardBackgroundColor="@color/white">
 
     <LinearLayout
-        android:orientation="vertical" android:layout_width="0dp" android:layout_height="wrap_content"
-        android:layout_weight="1">
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical">
 
-        <TextView
-            android:id="@+id/tvFoodName" android:text="Sữa tươi"
-            android:textStyle="bold" android:textSize="16sp"
-            android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+        <!-- Food Image with rounded corners -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            android:layout_marginEnd="16dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="2dp">
 
-        <TextView
-            android:id="@+id/tvFoodInfo" android:text="HSD: 03/10 | SL: 2 hộp"
-            android:textSize="13sp" android:textColor="#7A7A7A"
-            android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <ImageView
+                android:id="@+id/imgFood"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:src="@drawable/ic_launcher_foreground"/>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Food Info Section -->
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1">
+
+            <TextView
+                android:id="@+id/tvFoodName"
+                android:text="Sữa tươi Vinamilk"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:textColor="@color/darker_gray"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"/>
+
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="2dp">
+
+                <TextView
+                    android:text="📅"
+                    android:textSize="12sp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="4dp"/>
+
+                <TextView
+                    android:id="@+id/tvExpiry"
+                    android:text="HSD: 03/10/2025"
+                    android:textSize="13sp"
+                    android:textColor="@color/gray_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:text="📦"
+                    android:textSize="12sp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="4dp"/>
+
+                <TextView
+                    android:id="@+id/tvQuantity"
+                    android:text="SL: 2 hộp"
+                    android:textSize="13sp"
+                    android:textColor="@color/gray_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Action Buttons -->
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp">
+
+            <Button
+                android:id="@+id/btnDetail"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="Chi tiết"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:background="@drawable/bg_button_primary"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:layout_marginBottom="8dp"/>
+
+            <Button
+                android:id="@+id/btnDelete"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="Xóa"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="@color/orange"
+                android:background="@drawable/bg_button_outline_orange"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"/>
+        </LinearLayout>
     </LinearLayout>
-
-    <LinearLayout android:orientation="vertical"
-        android:layout_width="wrap_content" android:layout_height="wrap_content">
-
-        <!-- Track Order -> Xem chi tiết (cam đặc) -->
-        <Button
-            android:id="@+id/btnDetail" android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="Xem chi tiết" android:textColor="@android:color/white"
-            android:backgroundTint="@color/orange"/>
-
-        <!-- Cancel -> Xóa (viền cam) -->
-        <Button
-            android:id="@+id/btnDelete" android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="Xóa" android:layout_marginTop="6dp"
-            android:textColor="@color/orange" android:background="@drawable/bg_button_outline_orange"/>
-    </LinearLayout>
-</LinearLayout>
+</androidx.cardview.widget.CardView>
