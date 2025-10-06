@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="150dp"
+    android:viewportWidth="200"
+    android:viewportHeight="150">
+
+    <!-- Background -->
+    <path
+        android:pathData="M0,0L200,0L200,150L0,150Z"
+        android:fillColor="#E8F5E8"/>
+
+    <!-- Bowl shape -->
+    <path
+        android:pathData="M50,60 Q100,40 150,60 L140,100 Q100,120 60,100 Z"
+        android:fillColor="#4CAF50"/>
+
+    <!-- Steam lines -->
+    <path
+        android:pathData="M80,30 L80,50 M100,25 L100,45 M120,30 L120,50"
+        android:strokeColor="#FF9800"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"/>
+</vector>

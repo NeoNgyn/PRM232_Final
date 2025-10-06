@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="150dp"
+    android:viewportWidth="200"
+    android:viewportHeight="150">
+
+    <!-- Background -->
+    <path
+        android:pathData="M0,0L200,0L200,150L0,150Z"
+        android:fillColor="#FFF3E0"/>
+
+    <!-- Bread shape -->
+    <path
+        android:pathData="M50,55 Q100,35 150,55 Q150,95 100,95 Q50,95 50,55 Z"
+        android:fillColor="#FFCC02"/>
+
+    <!-- Filling -->
+    <path
+        android:pathData="M60,70 L140,70 L140,80 L60,80 Z"
+        android:fillColor="#4CAF50"/>
+</vector>

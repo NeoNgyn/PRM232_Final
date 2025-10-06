@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="150dp"
+    android:viewportWidth="200"
+    android:viewportHeight="150">
+
+    <!-- Background -->
+    <path
+        android:pathData="M0,0L200,0L200,150L0,150Z"
+        android:fillColor="#E1F5FE"/>
+
+    <!-- Bowl -->
+    <path
+        android:pathData="M60,80 Q100,60 140,80 L135,110 Q100,125 65,110 Z"
+        android:fillColor="#03A9F4"/>
+
+    <!-- Dessert content (circles as paths) -->
+    <path
+        android:pathData="M79,90 A6,6 0 1,1 91,90 A6,6 0 1,1 79,90 Z"
+        android:fillColor="#4CAF50"/>
+    <path
+        android:pathData="M110,85 A5,5 0 1,1 120,85 A5,5 0 1,1 110,85 Z"
+        android:fillColor="#4CAF50"/>
+</vector>
