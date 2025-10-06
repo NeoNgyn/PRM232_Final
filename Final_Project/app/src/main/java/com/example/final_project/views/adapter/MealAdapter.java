@@ -1,4 +1,4 @@
-package com.example.final_project;
+package com.example.final_project.views.adapter;
 
 import android.content.Context;
 import android.content.Intent;
@@ -9,6 +9,11 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.example.final_project.views.activity.MealDetailActivity;
+import com.example.final_project.R;
+import com.example.final_project.models.entity.Meal;
+
 import java.util.List;
 
 public class MealAdapter extends RecyclerView.Adapter<MealAdapter.MealViewHolder> {

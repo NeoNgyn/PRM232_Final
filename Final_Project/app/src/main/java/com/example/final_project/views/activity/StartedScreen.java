@@ -1,4 +1,4 @@
-package com.example.final_project;
+package com.example.final_project.views.activity;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -7,6 +7,8 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.example.final_project.R;
 
 public class StartedScreen extends AppCompatActivity {
 

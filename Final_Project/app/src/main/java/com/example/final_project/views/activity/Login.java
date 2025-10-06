@@ -1,4 +1,4 @@
-package com.example.final_project;
+package com.example.final_project.views.activity;
 
 import android.content.Intent;
 import android.graphics.Color;
@@ -14,9 +14,10 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
+
+import com.example.final_project.R;
 
 public class Login extends AppCompatActivity {
 
