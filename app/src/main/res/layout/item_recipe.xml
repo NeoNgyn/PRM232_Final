@@ -1,0 +1,49 @@
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="200dp"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="4dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="8dp">
+
+        <ImageView
+            android:id="@+id/image_recipe"
+            android:layout_width="match_parent"
+            android:layout_height="120dp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_food_placeholder"
+            android:contentDescription="@string/food_image"
+            app:cardCornerRadius="8dp"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:id="@+id/text_recipe_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Tên món ăn"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:textColor="#222"
+            android:gravity="center"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:id="@+id/text_recipe_description"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Mô tả ngắn về món ăn"
+            android:textSize="12sp"
+            android:textColor="#666"
+            android:gravity="center"
+            android:maxLines="3"
+            android:ellipsize="end"
+            android:lineSpacingExtra="2dp" />
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>

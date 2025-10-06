@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="150dp"
+    android:viewportWidth="200"
+    android:viewportHeight="150">
+
+    <!-- Background -->
+    <path
+        android:pathData="M0,0L200,0L200,150L0,150Z"
+        android:fillColor="#FFF3E0"/>
+
+    <!-- Noodles bowl -->
+    <path
+        android:pathData="M40,70 Q100,50 160,70 L150,90 Q100,110 50,90 Z"
+        android:fillColor="#FFC107"/>
+
+    <!-- Meat pieces (circles as paths) -->
+    <path
+        android:pathData="M72,75 A8,8 0 1,1 88,75 A8,8 0 1,1 72,75 Z"
+        android:fillColor="#8D6E63"/>
+    <path
+        android:pathData="M110,80 A10,10 0 1,1 130,80 A10,10 0 1,1 110,80 Z"
+        android:fillColor="#8D6E63"/>
+</vector>
