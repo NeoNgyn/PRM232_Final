@@ -183,7 +183,7 @@
 //        }
 //    }
 //}
-package com.example.final_project;
+package com.example.final_project.views.activity;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -196,6 +196,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.final_project.R;
 import com.google.android.material.chip.ChipGroup;
 
 import java.util.ArrayList;

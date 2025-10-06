@@ -1,4 +1,4 @@
-package com.example.final_project;
+package com.example.final_project.models.entity;
 
 public class Meal {
     private String name;

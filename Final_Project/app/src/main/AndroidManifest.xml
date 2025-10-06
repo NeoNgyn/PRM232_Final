@@ -13,22 +13,22 @@
         android:theme="@style/Theme.Final_Project">
 
         <activity
-            android:name=".StartedScreen"
+            android:name=".views.activity.StartedScreen"
             android:exported="true">
         </activity>
 
         <activity
-            android:name=".SignUp"
+            android:name=".views.activity.SignUp"
             android:exported="false" />
         <activity
-            android:name=".Login"
+            android:name=".views.activity.Login"
             android:exported="false" />
         <activity
-            android:name=".MealDetailActivity"
+            android:name=".views.activity.MealDetailActivity"
             android:exported="false" />
 
         <activity
-            android:name=".MealPlanActivity"
+            android:name=".views.activity.MealPlanActivity"
             android:exported="true">   <intent-filter>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
