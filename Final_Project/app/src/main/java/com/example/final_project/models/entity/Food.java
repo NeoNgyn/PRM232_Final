@@ -1,4 +1,4 @@
-package com.example.assignment_task1.model;
+package com.example.final_project.model;
 
 import java.util.Date;
 

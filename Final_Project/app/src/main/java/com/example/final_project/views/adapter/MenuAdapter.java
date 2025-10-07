@@ -1,4 +1,4 @@
-package com.example.assignment_task1.adapter;
+package com.example.final_project.adapter;
 
 import android.view.LayoutInflater;
 import android.view.View;
@@ -7,8 +7,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import com.example.assignment_task1.R;
-import com.example.assignment_task1.model.DayMenu;
+import com.example.final_project.R;
+import com.example.final_project.model.DayMenu;
 import java.util.List;
 
 public class MenuAdapter extends RecyclerView.Adapter<MenuAdapter.MenuViewHolder> {

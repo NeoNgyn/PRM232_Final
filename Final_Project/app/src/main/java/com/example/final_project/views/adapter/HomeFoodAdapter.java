@@ -1,4 +1,4 @@
-package com.example.assignment_task1.adapter;
+package com.example.final_project.adapter;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -8,7 +8,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-import com.example.assignment_task1.R;
+import com.example.final_project.R;
 import java.util.List;
 
 public class HomeFoodAdapter extends RecyclerView.Adapter<HomeFoodAdapter.FoodViewHolder> {

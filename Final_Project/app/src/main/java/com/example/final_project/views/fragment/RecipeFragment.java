@@ -1,4 +1,4 @@
-package com.example.assignment_task1.fragment;
+package com.example.final_project.fragment;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -7,10 +7,10 @@ import android.view.ViewGroup;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import com.example.assignment_task1.R;
-import com.example.assignment_task1.adapter.MenuAdapter;
-import com.example.assignment_task1.model.DayMenu;
-import com.example.assignment_task1.model.Recipe;
+import com.example.final_project.R;
+import com.example.final_project.adapter.MenuAdapter;
+import com.example.final_project.model.DayMenu;
+import com.example.final_project.model.Recipe;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;

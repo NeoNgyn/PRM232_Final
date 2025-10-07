@@ -1,4 +1,4 @@
-package com.example.assignment_task1.fragment;
+package com.example.final_project.fragment;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
@@ -15,7 +15,7 @@ import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
-import com.example.assignment_task1.R;
+import com.example.final_project.R;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;

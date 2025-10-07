@@ -1,4 +1,4 @@
-package com.example.assignment_task1.model;
+package com.example.final_project.model;
 
 public class Recipe {
     private String name;
