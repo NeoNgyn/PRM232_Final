@@ -1,4 +1,4 @@
-package com.example.final_project.fragment;
+package com.example.final_project.views.fragment;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -8,9 +8,9 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.final_project.R;
-import com.example.final_project.adapter.MenuAdapter;
-import com.example.final_project.model.DayMenu;
-import com.example.final_project.model.Recipe;
+import com.example.final_project.views.adapter.MenuAdapter;
+import com.example.final_project.models.entity.DayMenu;
+import com.example.final_project.models.entity.Recipe;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;

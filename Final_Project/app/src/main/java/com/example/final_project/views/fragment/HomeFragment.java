@@ -1,4 +1,4 @@
-package com.example.final_project.fragment;
+package com.example.final_project.views.fragment;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -13,8 +13,8 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.final_project.R;
-import com.example.final_project.adapter.HomeFoodAdapter;
-import com.example.final_project.adapter.HomeMenuAdapter;
+import com.example.final_project.views.adapter.HomeFoodAdapter;
+import com.example.final_project.views.adapter.HomeMenuAdapter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

@@ -1,4 +1,4 @@
-package com.example.final_project.adapter;
+package com.example.final_project.views.adapter;
 
 import android.graphics.Bitmap;
 import android.view.LayoutInflater;
@@ -9,7 +9,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.final_project.R;
-import com.example.final_project.model.Recipe;
+import com.example.final_project.models.entity.Recipe;
 import java.io.InputStream;
 import java.util.List;
 

@@ -2,6 +2,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-feature android:name="android.hardware.camera.any" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -26,6 +31,13 @@
         <activity
             android:name=".views.activity.MealDetailActivity"
             android:exported="false" />
+
+<!--        <activity-->
+<!--            android:name=".views.activity.HomeMenuActivity"-->
+<!--            android:exported="false" />-->
+<!--        <activity-->
+<!--            android:name=".views.activity.RecipeActivity"-->
+<!--            android:exported="false" />-->
 
         <activity
             android:name=".views.activity.MealPlanActivity"
