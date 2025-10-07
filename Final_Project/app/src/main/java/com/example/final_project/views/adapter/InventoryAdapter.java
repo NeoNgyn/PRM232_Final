@@ -1,8 +1,7 @@
-package com.example.assignment_task1.adapter;
+package com.example.final_project.views.adapter;
 
 import android.content.Context;
 import android.graphics.Color;
-import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,8 +10,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-import com.example.assignment_task1.R;
-import com.example.assignment_task1.model.Food;
+import com.example.final_project.R;
+import com.example.final_project.model.Food;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;

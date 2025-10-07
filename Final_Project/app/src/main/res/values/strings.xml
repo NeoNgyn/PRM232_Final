@@ -46,4 +46,7 @@
     <string name="signup_text">Already a member? <u><b><font color='#000000'>Sign Up</font></b></u></string>
     <string name="policy_text">I agree to Mealtime’s <u><b><font color='#000000'>Terms and Conditions</font></b></u></string>
     <string name="underline_text"><b><u>Forgot Password?</u></b></string>
+    <string name="food_image">Food Image</string>
+    <string name="food_quantity">Quantity: %d</string>
+    <string name="food_expiry">Expiry: %s</string>
 </resources>
