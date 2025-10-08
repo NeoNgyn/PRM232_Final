@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <color name="colorPrimary">#FF9800</color> <!-- Cam tươi -->
+    <color name="colorPrimaryDark">#F57C00</color>
+    <color name="colorAccent">#FFA726</color>
+    <color name="white">#FFFFFF</color>
+    <color name="gray">#9E9E9E</color>
     <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
     <color name="orange">#FF6B35</color>
     <color name="orange_light">#FFB399</color>
     <color name="orange_dark">#E55A2B</color>
