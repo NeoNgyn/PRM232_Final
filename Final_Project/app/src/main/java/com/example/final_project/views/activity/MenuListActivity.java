@@ -10,7 +10,7 @@ import com.example.final_project.views.adapter.WeeklyMenuAdapter;
 import java.util.ArrayList;
 import java.util.List;
 
-public class RecipeActivity extends AppCompatActivity {
+public class MenuListActivity extends AppCompatActivity {
 
     private RecyclerView[] weeklyRecyclerViews = new RecyclerView[7];
     private WeeklyMenuAdapter[] weeklyAdapters = new WeeklyMenuAdapter[7];
