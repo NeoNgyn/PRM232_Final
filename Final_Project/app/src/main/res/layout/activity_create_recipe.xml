@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFF8F2">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Create New Recipe"
+            android:textColor="#FF8C00"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="20dp" />
+
+        <ImageView
+            android:id="@+id/imageRecipePreview"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_food_placeholder"
+            android:background="@drawable/image_border_orange"
+            android:layout_marginBottom="10dp" />
+
+        <Button
+            android:id="@+id/btnChooseImage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Choose Image"
+            android:textColor="#FFF"
+            android:backgroundTint="#FF8C00" />
+
+        <EditText
+            android:id="@+id/etRecipeName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Recipe name"
+            android:layout_marginTop="20dp"
+            android:backgroundTint="#FF8C00"
+            android:textColor="#000"
+            android:textColorHint="#999"
+            android:padding="10dp" />
+
+        <EditText
+            android:id="@+id/etRecipeDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Description"
+            android:layout_marginTop="10dp"
+            android:backgroundTint="#FF8C00"
+            android:textColor="#000"
+            android:textColorHint="#999"
+            android:padding="10dp" />
+
+        <EditText
+            android:id="@+id/etRecipeNote"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Notes (optional)"
+            android:layout_marginTop="10dp"
+            android:backgroundTint="#FF8C00"
+            android:textColor="#000"
+            android:textColorHint="#999"
+            android:padding="10dp" />
+
+        <Button
+            android:id="@+id/btnSaveRecipe"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Save Recipe"
+            android:textColor="#FFF"
+            android:backgroundTint="#FF8C00"
+            android:layout_marginTop="20dp" />
+    </LinearLayout>
+</ScrollView>
