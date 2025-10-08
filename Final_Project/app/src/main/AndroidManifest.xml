@@ -17,10 +17,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Final_Project">
 
-        <activity
-            android:name=".views.activity.StartedScreen"
-            android:exported="true">
-        </activity>
+<!--        <activity-->
+<!--            android:name=".views.activity.StartedScreen"-->
+<!--            android:exported="true">-->
+<!--        </activity>-->
 
         <activity
             android:name=".views.activity.SignUp"
@@ -28,9 +28,9 @@
         <activity
             android:name=".views.activity.Login"
             android:exported="false" />
-        <activity
-            android:name=".views.activity.MealDetailActivity"
-            android:exported="false" />
+<!--        <activity-->
+<!--            android:name=".views.activity.MealDetailActivity"-->
+<!--            android:exported="false" />-->
 
 <!--        <activity-->
 <!--            android:name=".views.activity.HomeMenuActivity"-->
@@ -40,7 +40,7 @@
 <!--            android:exported="false" />-->
 
         <activity
-            android:name=".views.activity.MealPlanActivity"
+            android:name=".views.activity.CreateRecipeActivity"
             android:exported="true">   <intent-filter>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
