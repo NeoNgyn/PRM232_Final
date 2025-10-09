@@ -1,22 +1,41 @@
 package com.example.final_project.models.entity;
 
-public class Recipe {
-    private String name;
-    private String description;
-    private String imageUrl;
-    private String imageName1;
-    private String imageName2;
-    private String imageName3;
-    private String note;
+import java.util.Date;
+import java.util.List;
 
-    public Recipe(String name, String description, String imageUrl, String imageName1, String imageName2, String imageName3, String note) {
+public class Recipe {
+    private String recipeId;
+    private String name;
+    private String instruction;
+    private String nutrition;
+    private String imageUrl;
+    private Date createdAt;
+    private Date updatedAt;
+
+    // Quan hệ 1 - N
+    private List<Ingredient> ingredients;
+
+    public Recipe() {}
+
+    public Recipe(String recipeId, String name, String instruction, String nutrition, String imageUrl,
+                  Date createdAt, Date updatedAt) {
+        this.recipeId = recipeId;
         this.name = name;
-        this.description = description;
+        this.instruction = instruction;
+        this.nutrition = nutrition;
         this.imageUrl = imageUrl;
-        this.imageName1 = imageName1;
-        this.imageName2 = imageName2;
-        this.imageName3 = imageName3;
-        this.note = note;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+    }
+
+    // Getter / Setter
+
+    public String getRecipeId() {
+        return recipeId;
+    }
+
+    public void setRecipeId(String recipeId) {
+        this.recipeId = recipeId;
     }
 
     public String getName() {
@@ -27,12 +46,20 @@ public class Recipe {
         this.name = name;
     }
 
-    public String getDescription() {
-        return description;
+    public String getInstruction() {
+        return instruction;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
+    public void setInstruction(String instruction) {
+        this.instruction = instruction;
+    }
+
+    public String getNutrition() {
+        return nutrition;
+    }
+
+    public void setNutrition(String nutrition) {
+        this.nutrition = nutrition;
     }
 
     public String getImageUrl() {
@@ -43,35 +70,27 @@ public class Recipe {
         this.imageUrl = imageUrl;
     }
 
-    public String getImageName1() {
-        return imageName1;
+    public Date getCreatedAt() {
+        return createdAt;
     }
 
-    public void setImageName1(String imageName1) {
-        this.imageName1 = imageName1;
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
     }
 
-    public String getImageName2() {
-        return imageName2;
+    public Date getUpdatedAt() {
+        return updatedAt;
     }
 
-    public void setImageName2(String imageName2) {
-        this.imageName2 = imageName2;
+    public void setUpdatedAt(Date updatedAt) {
+        this.updatedAt = updatedAt;
     }
 
-    public String getImageName3() {
-        return imageName3;
+    public List<Ingredient> getIngredients() {
+        return ingredients;
     }
 
-    public void setImageName3(String imageName3) {
-        this.imageName3 = imageName3;
-    }
-
-    public String getNote() {
-        return note;
-    }
-
-    public void setNote(String note) {
-        this.note = note;
+    public void setIngredients(List<Ingredient> ingredients) {
+        this.ingredients = ingredients;
     }
 }
