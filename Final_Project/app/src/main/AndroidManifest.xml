@@ -2,6 +2,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-feature android:name="android.hardware.camera.any" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -12,14 +17,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Final_Project">
 
-        <activity
-            android:name=".views.activity.StartedScreen"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+<!--        <activity-->
+<!--            android:name=".views.activity.StartedScreen"-->
+<!--            android:exported="true">-->
+<!--        </activity>-->
 
         <activity
             android:name=".views.activity.SignUp"
@@ -27,13 +28,23 @@
         <activity
             android:name=".views.activity.Login"
             android:exported="false" />
-        <activity
-            android:name=".views.activity.MealDetailActivity"
-            android:exported="false" />
+<!--        <activity-->
+<!--            android:name=".views.activity.MealDetailActivity"-->
+<!--            android:exported="false" />-->
+
+<!--        <activity-->
+<!--            android:name=".views.activity.HomeMenuActivity"-->
+<!--            android:exported="false" />-->
+<!--        <activity-->
+<!--            android:name=".views.activity.RecipeActivity"-->
+<!--            android:exported="false" />-->
 
         <activity
-            android:name=".views.activity.MealPlanActivity"
-            android:exported="true">
+            android:name=".views.activity.CreateRecipeActivity"
+            android:exported="true">   <intent-filter>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent-filter>
         </activity>
 
         <activity

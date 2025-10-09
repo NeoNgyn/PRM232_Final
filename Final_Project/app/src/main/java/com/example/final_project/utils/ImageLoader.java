@@ -1,4 +1,4 @@
-package com.example.assignment_task1.utils;
+package com.example.final_project.utils;
 
 import android.content.Context;
 import android.graphics.Bitmap;

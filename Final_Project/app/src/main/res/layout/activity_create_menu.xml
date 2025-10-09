@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp"
+    android:background="@color/white">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/tvHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Create New Menu"
+            android:textColor="@color/colorPrimaryDark"
+            android:textStyle="bold"
+            android:textSize="22sp"
+            android:gravity="center"
+            android:layout_marginBottom="12dp"/>
+
+        <!-- Menu Name -->
+        <EditText
+            android:id="@+id/etMenuName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Menu name"
+            android:background="@drawable/bg_white_rounded"
+            android:padding="12dp"
+            android:layout_marginBottom="12dp"/>
+
+        <!-- Description -->
+        <EditText
+            android:id="@+id/etMenuDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Description"
+            android:background="@drawable/bg_white_rounded"
+            android:padding="12dp"
+            android:inputType="textMultiLine"
+            android:layout_marginBottom="12dp"/>
+
+        <!-- Note -->
+        <EditText
+            android:id="@+id/etMenuNote"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Note (optional)"
+            android:background="@drawable/bg_white_rounded"
+            android:padding="12dp"
+            android:layout_marginBottom="12dp"/>
+
+        <!-- Menu Image -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Menu Image"
+            android:textColor="@color/gray"
+            android:layout_marginTop="6dp"/>
+
+        <ImageView
+            android:id="@+id/imageMenu"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:layout_marginTop="8dp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_food_placeholder"
+            android:background="@drawable/image_border"/>
+
+        <Button
+            android:id="@+id/btnUploadImage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Choose Menu Image"
+            android:layout_marginTop="8dp"
+            android:backgroundTint="@color/colorPrimary"
+            android:textColor="@color/white"/>
+
+        <!-- Recipes label + add -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="16dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="Recipes in Menu"
+                android:textSize="18sp"
+                android:textStyle="bold"/>
+
+            <Button
+                android:id="@+id/btnAddRecipe"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="+ Add Recipe"
+                android:backgroundTint="@color/colorAccent"
+                android:textColor="@color/white"/>
+        </LinearLayout>
+
+        <!-- RecyclerView for recipe inputs -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerRecipeInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"/>
+
+        <!-- Save -->
+        <Button
+            android:id="@+id/btnSaveMenu"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Save Menu"
+            android:textAllCaps="false"
+            android:layout_marginTop="20dp"
+            android:backgroundTint="@color/colorPrimaryDark"
+            android:textColor="@color/white"/>
+
+    </LinearLayout>
+</ScrollView>
