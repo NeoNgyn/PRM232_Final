@@ -15,6 +15,10 @@
         <activity
             android:name=".views.activity.StartedScreen"
             android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
         </activity>
 
         <activity
@@ -29,10 +33,7 @@
 
         <activity
             android:name=".views.activity.MealPlanActivity"
-            android:exported="true">   <intent-filter>
-            <action android:name="android.intent.action.MAIN" />
-            <category android:name="android.intent.category.LAUNCHER" />
-        </intent-filter>
+            android:exported="true">
         </activity>
 
         <activity
