@@ -34,7 +34,7 @@ public class WeeklyMenuAdapter extends RecyclerView.Adapter<WeeklyMenuAdapter.We
         Recipe dish = dishList.get(position);
 
         holder.tvWeeklyDishName.setText(dish.getName());
-        holder.tvWeeklyDishDesc.setText(dish.getDescription());
+        holder.tvWeeklyDishDesc.setText(dish.getInstruction());
 
         // Load ảnh - tạm thời dùng placeholder
         holder.ivWeeklyDishImage.setImageResource(R.drawable.ic_food_placeholder);

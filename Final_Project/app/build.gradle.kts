@@ -1,5 +1,7 @@
 import java.util.Properties
 
+import org.gradle.kotlin.dsl.implementation
+
 plugins {
     alias(libs.plugins.android.application)
 }
@@ -60,6 +62,7 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
+    implementation(files("libs/mysql-connector-j-8.0.33.jar"))
 
     // CameraX dependencies
     val cameraxVersion = "1.3.4"

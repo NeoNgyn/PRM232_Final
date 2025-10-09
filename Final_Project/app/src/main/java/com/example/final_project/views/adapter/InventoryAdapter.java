@@ -11,7 +11,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.final_project.R;
-import com.example.final_project.model.Food;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -19,15 +19,15 @@ import java.util.Locale;
 
 public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.FoodViewHolder> {
     public interface OnFoodActionListener {
-        void onEdit(Food food, int position);
-        void onDelete(Food food, int position);
+        void onEdit(com.example.final_project.models.entity.FoodItem food, int position);
+        void onDelete(com.example.final_project.models.entity.FoodItem food, int position);
     }
 
-    private List<Food> foodList;
+    private List<com.example.final_project.models.entity.FoodItem> foodList;
     private Context context;
     private OnFoodActionListener listener;
 
-    public InventoryAdapter(Context context, List<Food> foodList, OnFoodActionListener listener) {
+    public InventoryAdapter(Context context, List<com.example.final_project.models.entity.FoodItem> foodList, OnFoodActionListener listener) {
         this.context = context;
         this.foodList = foodList;
         this.listener = listener;
@@ -42,14 +42,14 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Food
 
     @Override
     public void onBindViewHolder(@NonNull FoodViewHolder holder, int position) {
-        Food food = foodList.get(position);
-        holder.tvFoodName.setText(food.getName());
+        com.example.final_project.models.entity.FoodItem food = foodList.get(position);
+        holder.tvFoodName.setText(food.getFoodName());
         holder.tvQuantity.setText(context.getString(R.string.food_quantity, food.getQuantity()));
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
         holder.tvExpiry.setText(context.getString(R.string.food_expiry, sdf.format(food.getExpiryDate())));
         holder.tvNote.setText(food.getNote());
         // Load image from drawable resource name
-        int resId = context.getResources().getIdentifier(food.getImageResourceName(), "drawable", context.getPackageName());
+        int resId = context.getResources().getIdentifier(food.getImageUrl(), "drawable", context.getPackageName());
         if (resId != 0) {
             holder.imgFood.setImageResource(resId);
         } else {
@@ -73,7 +73,7 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Food
         return foodList.size();
     }
 
-    public void updateList(List<Food> newList) {
+    public void updateList(List<com.example.final_project.models.entity.FoodItem> newList) {
         this.foodList = newList;
         notifyDataSetChanged();
     }

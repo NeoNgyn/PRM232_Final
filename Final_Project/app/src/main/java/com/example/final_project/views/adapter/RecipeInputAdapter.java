@@ -33,7 +33,7 @@ public class RecipeInputAdapter extends RecyclerView.Adapter<RecipeInputAdapter.
         Recipe recipe = recipes.get(position);
 
         holder.editRecipeName.setText(recipe.getName());
-        holder.editRecipeDescription.setText(recipe.getDescription());
+        holder.editRecipeDescription.setText(recipe.getInstruction());
 
         holder.btnChooseImage.setOnClickListener(v -> {
             // TODO: mở file picker / gallery
