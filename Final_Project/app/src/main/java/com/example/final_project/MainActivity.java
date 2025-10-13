@@ -1,5 +1,6 @@
 package com.example.final_project;
 
+import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.activity.EdgeToEdge;
@@ -7,6 +8,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+
+import com.example.final_project.views.activity.FridgeInventoryActivity;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -20,5 +23,10 @@ public class MainActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+        // Auto-launch to FridgeInventoryActivity for testing
+        Intent intent = new Intent(this, FridgeInventoryActivity.class);
+        startActivity(intent);
+        finish(); // Close MainActivity so back button doesn't return here
     }
 }
