@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="OrangeAlertDialog" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
+        <item name="colorPrimary">#FF8C00</item>
+        <item name="colorAccent">#FF8C00</item>
+        <item name="android:textColorPrimary">#000</item>
+    </style>
+
+</resources>

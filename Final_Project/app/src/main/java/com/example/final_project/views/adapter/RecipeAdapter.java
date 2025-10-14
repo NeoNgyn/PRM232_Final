@@ -1,4 +1,4 @@
-package com.example.assignment_task1.adapter;
+package com.example.final_project.views.adapter;
 
 import android.graphics.Bitmap;
 import android.view.LayoutInflater;
@@ -8,16 +8,18 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-import com.example.assignment_task1.R;
-import com.example.assignment_task1.model.Recipe;
+import com.example.final_project.R;
+import com.example.final_project.models.entity.Recipe;
+import com.example.final_project.models.entity.RecipeInMenu;
+
 import java.io.InputStream;
 import java.util.List;
 
 public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeViewHolder> {
 
-    private List<Recipe> recipes;
+    private List<RecipeInMenu> recipes;
 
-    public RecipeAdapter(List<Recipe> recipes) {
+    public RecipeAdapter(List<RecipeInMenu> recipes) {
         this.recipes = recipes;
         android.util.Log.d("RecipeAdapter", "Created adapter with " + recipes.size() + " recipes");
     }
@@ -32,9 +34,9 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
 
     @Override
     public void onBindViewHolder(@NonNull RecipeViewHolder holder, int position) {
-        Recipe recipe = recipes.get(position);
-        android.util.Log.d("RecipeAdapter", "Binding recipe " + position + ": " + recipe.getName());
-        holder.bind(recipe);
+        RecipeInMenu recipe = recipes.get(position);
+        android.util.Log.d("RecipeAdapter", "Binding recipe " + position + ": " + recipe.getRecipe());
+//        holder.bind(recipe);
     }
 
     @Override
@@ -58,9 +60,9 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
 
         public void bind(Recipe recipe) {
             textRecipeName.setText(recipe.getName());
-            textRecipeDescription.setText(recipe.getDescription());
+            textRecipeDescription.setText(recipe.getInstruction());
             // Loại bỏ hậu tố _1 nếu có trong tên file
-            String imageFileName = recipe.getImageName1();
+            String imageFileName = recipe.getImageUrl();
             if (imageFileName.endsWith("_1")) {
                 imageFileName = imageFileName.substring(0, imageFileName.length() - 2);
             }

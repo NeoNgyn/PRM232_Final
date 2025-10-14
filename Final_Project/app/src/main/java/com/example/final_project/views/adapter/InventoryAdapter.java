@@ -1,18 +1,20 @@
-package com.example.assignment_task1.adapter;
+package com.example.final_project.views.adapter;
 
 import android.content.Context;
 import android.graphics.Color;
-import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageButton;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-import com.example.assignment_task1.R;
-import com.example.assignment_task1.model.Food;
+import com.example.final_project.R;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.example.final_project.models.entity.FoodItem;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -20,15 +22,15 @@ import java.util.Locale;
 
 public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.FoodViewHolder> {
     public interface OnFoodActionListener {
-        void onEdit(Food food, int position);
-        void onDelete(Food food, int position);
+        void onEdit(FoodItem food, int position);
+        void onDelete(FoodItem food, int position);
     }
 
-    private List<Food> foodList;
+    private List<FoodItem> foodList;
     private Context context;
     private OnFoodActionListener listener;
 
-    public InventoryAdapter(Context context, List<Food> foodList, OnFoodActionListener listener) {
+    public InventoryAdapter(Context context, List<FoodItem> foodList, OnFoodActionListener listener) {
         this.context = context;
         this.foodList = foodList;
         this.listener = listener;
@@ -43,38 +45,69 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Food
 
     @Override
     public void onBindViewHolder(@NonNull FoodViewHolder holder, int position) {
-        Food food = foodList.get(position);
-        holder.tvFoodName.setText(food.getName());
+        final FoodItem food = foodList.get(position);
+
+        if (food == null) {
+            // Defensive defaults to avoid crashes
+            holder.tvFoodName.setText("--");
+            holder.tvQuantity.setText(context.getString(R.string.food_quantity, 0));
+            holder.tvExpiry.setText(context.getString(R.string.food_expiry, "--"));
+            holder.tvNote.setText("");
+            holder.imgFood.setImageResource(R.drawable.ic_food_placeholder);
+            return;
+        }
+
+        holder.tvFoodName.setText(food.getFoodName() == null ? "--" : food.getFoodName());
         holder.tvQuantity.setText(context.getString(R.string.food_quantity, food.getQuantity()));
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
-        holder.tvExpiry.setText(context.getString(R.string.food_expiry, sdf.format(food.getExpiryDate())));
-        holder.tvNote.setText(food.getNote());
-        // Load image from drawable resource name
-        int resId = context.getResources().getIdentifier(food.getImageResourceName(), "drawable", context.getPackageName());
-        if (resId != 0) {
-            holder.imgFood.setImageResource(resId);
+        if (food.getExpiryDate() != null) {
+            holder.tvExpiry.setText(context.getString(R.string.food_expiry, sdf.format(food.getExpiryDate())));
         } else {
-            holder.imgFood.setImageResource(R.drawable.ic_food_placeholder);
+            holder.tvExpiry.setText(context.getString(R.string.food_expiry, "--"));
         }
-        // Cảnh báo màu
-        long daysLeft = (food.getExpiryDate().getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24);
-        if (daysLeft <= 2) {
-            holder.tvExpiry.setTextColor(Color.RED);
-        } else if (daysLeft <= 5) {
-            holder.tvExpiry.setTextColor(Color.parseColor("#FFA500")); // vàng cam
+        holder.tvNote.setText(food.getNote() == null ? "" : food.getNote());
+
+        String image = food.getImageUrl();
+        if (image != null && (image.startsWith("http://") || image.startsWith("https://"))) {
+            Glide.with(context)
+                    .load(image)
+                    .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                    .placeholder(R.drawable.ic_food_placeholder)
+                    .into(holder.imgFood);
         } else {
-            holder.tvExpiry.setTextColor(Color.parseColor("#228B22")); // xanh lá
+            int resId = context.getResources().getIdentifier(image == null ? "" : image, "drawable", context.getPackageName());
+            if (resId != 0) holder.imgFood.setImageResource(resId);
+            else holder.imgFood.setImageResource(R.drawable.ic_food_placeholder);
         }
-        holder.btnEdit.setOnClickListener(v -> listener.onEdit(food, position));
-        holder.btnDelete.setOnClickListener(v -> listener.onDelete(food, position));
+
+        if (food.getExpiryDate() != null) {
+            long daysLeft = (food.getExpiryDate().getTime() - new Date().getTime()) / (1000L * 60 * 60 * 24);
+            if (daysLeft <= 2) {
+                holder.tvExpiry.setTextColor(Color.RED);
+            } else if (daysLeft <= 5) {
+                holder.tvExpiry.setTextColor(Color.parseColor("#FFA500")); // Orange
+            } else {
+                holder.tvExpiry.setTextColor(Color.parseColor("#228B22")); // Green
+            }
+        } else {
+            holder.tvExpiry.setTextColor(Color.parseColor("#666666")); // Default gray
+        }
+
+        if (listener != null) {
+            holder.btnEdit.setOnClickListener(v -> listener.onEdit(food, position));
+            holder.btnDelete.setOnClickListener(v -> listener.onDelete(food, position));
+        } else {
+            holder.btnEdit.setOnClickListener(null);
+            holder.btnDelete.setOnClickListener(null);
+        }
     }
 
     @Override
     public int getItemCount() {
-        return foodList.size();
+        return foodList == null ? 0 : foodList.size();
     }
 
-    public void updateList(List<Food> newList) {
+    public void updateList(List<FoodItem> newList) {
         this.foodList = newList;
         notifyDataSetChanged();
     }
@@ -82,7 +115,7 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Food
     public static class FoodViewHolder extends RecyclerView.ViewHolder {
         ImageView imgFood;
         TextView tvFoodName, tvQuantity, tvExpiry, tvNote;
-        ImageButton btnEdit, btnDelete;
+        Button btnEdit, btnDelete;
         public FoodViewHolder(@NonNull View itemView) {
             super(itemView);
             imgFood = itemView.findViewById(R.id.imgFood);

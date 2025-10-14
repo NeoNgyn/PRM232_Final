@@ -1,4 +1,4 @@
-package com.example.assignment_task1.adapter;
+package com.example.final_project.views.adapter;
 
 import android.view.LayoutInflater;
 import android.view.View;
@@ -7,15 +7,16 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import com.example.assignment_task1.R;
-import com.example.assignment_task1.model.DayMenu;
+import com.example.final_project.R;
+import com.example.final_project.models.entity.Menu;
+
 import java.util.List;
 
 public class MenuAdapter extends RecyclerView.Adapter<MenuAdapter.MenuViewHolder> {
 
-    private List<DayMenu> dayMenus;
+    private List<Menu> dayMenus;
 
-    public MenuAdapter(List<DayMenu> dayMenus) {
+    public MenuAdapter(List<Menu> dayMenus) {
         this.dayMenus = dayMenus;
     }
 
@@ -29,7 +30,7 @@ public class MenuAdapter extends RecyclerView.Adapter<MenuAdapter.MenuViewHolder
 
     @Override
     public void onBindViewHolder(@NonNull MenuViewHolder holder, int position) {
-        DayMenu dayMenu = dayMenus.get(position);
+        Menu dayMenu = dayMenus.get(position);
         holder.bind(dayMenu);
     }
 
@@ -52,10 +53,10 @@ public class MenuAdapter extends RecyclerView.Adapter<MenuAdapter.MenuViewHolder
             recyclerViewRecipes.setLayoutManager(layoutManager);
         }
 
-        public void bind(DayMenu dayMenu) {
-            textDayName.setText(dayMenu.getDayName());
+        public void bind(Menu dayMenu) {
+            textDayName.setText(dayMenu.getMenuName());
 
-            RecipeAdapter recipeAdapter = new RecipeAdapter(dayMenu.getRecipes());
+            RecipeAdapter recipeAdapter = new RecipeAdapter(dayMenu.getRecipeList());
             recyclerViewRecipes.setAdapter(recipeAdapter);
         }
     }
