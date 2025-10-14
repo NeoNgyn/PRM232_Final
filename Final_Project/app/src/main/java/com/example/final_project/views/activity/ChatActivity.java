@@ -14,6 +14,8 @@ import com.example.final_project.BuildConfig;
 import com.example.final_project.R;
 import com.example.final_project.helper.GeminiApi;
 import com.example.final_project.models.entity.ChatMessage;
+import com.example.final_project.models.entity.FoodItem;
+import com.example.final_project.viewmodels.FoodItemViewModel;
 import com.example.final_project.views.adapter.ChatAdapter;
 
 import java.util.ArrayList;
@@ -59,30 +61,100 @@ public class ChatActivity extends AppCompatActivity {
         int thinkingIndex = chatMessages.size() - 1;
         chatAdapter.notifyItemInserted(thinkingIndex);
         recyclerViewChat.scrollToPosition(thinkingIndex);
+        String m = message.toLowerCase().trim();
+        if (m.contains("tủ lạnh") || m.contains("tu lanh") || m.contains("my fridge")) {
+            new Thread(() -> {
+                try {
+                    FoodItemViewModel viewModel = new FoodItemViewModel();
+                    String userId = "U001"; // sau này lấy từ session đăng nhập
+                    List<FoodItem> foodItems = viewModel.getFoodItemsByUserId(userId);
 
-        new GeminiApi().sendMessage(message, new GeminiApi.Callback() {
-            @Override
-            public void onSuccess(String reply) {
-                // Xóa tin nhắn "Đang suy nghĩ..."
-                chatMessages.remove(thinkingIndex);
-                chatAdapter.notifyItemRemoved(thinkingIndex);
+                    if (foodItems == null || foodItems.isEmpty()) {
+                        runOnUiThread(() -> {
+                            chatMessages.remove(thinkingIndex);
+                            chatAdapter.notifyItemRemoved(thinkingIndex);
 
-                // Thêm phản hồi thật
-                chatMessages.add(new ChatMessage(reply, false));
-                chatAdapter.notifyItemInserted(chatMessages.size() - 1);
-                recyclerViewChat.scrollToPosition(chatMessages.size() - 1);
-            }
+                            chatMessages.add(new ChatMessage(
+                                    "Mình chưa thấy nguyên liệu nào trong tủ lạnh của bạn. " +
+                                            "Bạn hãy thêm nguyên liệu vào kho trước (Ví dụ: trứng 6, cà chua 3, mì gói 2), rồi nhắn lại **my fridge** nhé.",
+                                    false));
+                            chatAdapter.notifyItemInserted(chatMessages.size() - 1);
+                            recyclerViewChat.scrollToPosition(chatMessages.size() - 1);
+                        });
+                        return;
+                    }
 
-            @Override
-            public void onError(Exception e) {
-                chatMessages.remove(thinkingIndex);
-                chatAdapter.notifyItemRemoved(thinkingIndex);
+                    StringBuilder ingredients = new StringBuilder();
+                    for (FoodItem item : foodItems) {
+                        if (item.getQuantity() > 0 && item.getFoodName() != null && !item.getFoodName().isEmpty()) {
+                            ingredients.append(item.getFoodName())
+                                    .append(" (").append(item.getQuantity()).append("), ");
+                        }
+                    }
+                    String ing = ingredients.toString().replaceAll(",\\s*$", "");
 
-                chatMessages.add(new ChatMessage("Có lỗi xảy ra: " + e.getMessage(), false));
-                chatAdapter.notifyItemInserted(chatMessages.size() - 1);
-                recyclerViewChat.scrollToPosition(chatMessages.size() - 1);
-            }
-        });
+                    if (ing.isEmpty()) { /* xử lý như bước (2) */ return; }
+
+                    String aiPrompt =
+                            "Bạn là đầu bếp. Dựa trên các nguyên liệu trong tủ lạnh: " + ing + ". " +
+                                    "Hãy gợi ý đúng 3 món ăn. Với mỗi món, liệt kê: 1) Tên món, 2) Nguyên liệu cần thêm (nếu thiếu), " +
+                                    "3) Công thức tóm tắt 4-6 bước, 4) Thời gian nấu ước tính.";
+
+                    new GeminiApi().sendMessage(aiPrompt, new GeminiApi.Callback() {
+                        @Override
+                        public void onSuccess(String reply) {
+                            runOnUiThread(() -> {
+                                chatMessages.remove(thinkingIndex);
+                                chatAdapter.notifyItemRemoved(thinkingIndex);
+
+                                chatMessages.add(new ChatMessage(reply, false));
+                                chatAdapter.notifyItemInserted(chatMessages.size() - 1);
+                                recyclerViewChat.scrollToPosition(chatMessages.size() - 1);
+                            });
+                        }
+
+                        @Override
+                        public void onError(Exception e) {
+                            runOnUiThread(() -> {
+                                chatMessages.remove(thinkingIndex);
+                                chatAdapter.notifyItemRemoved(thinkingIndex);
+                                chatMessages.add(new ChatMessage("Lỗi Gemini: " + e.getMessage(), false));
+                                chatAdapter.notifyItemInserted(chatMessages.size() - 1);
+                            });
+                        }
+                    });
+
+                } catch (Exception e) {
+                    runOnUiThread(() -> {
+                        chatMessages.remove(thinkingIndex);
+                        chatAdapter.notifyItemRemoved(thinkingIndex);
+                        chatMessages.add(new ChatMessage("Lỗi lấy dữ liệu: " + e.getMessage(), false));
+                        chatAdapter.notifyItemInserted(chatMessages.size() - 1);
+                    });
+                }
+            }).start();
+        } else {
+            // Xử lý prompt thường
+            new GeminiApi().sendMessage(message, new GeminiApi.Callback() {
+                @Override
+                public void onSuccess(String reply) {
+                    chatMessages.remove(thinkingIndex);
+                    chatAdapter.notifyItemRemoved(thinkingIndex);
+
+                    chatMessages.add(new ChatMessage(reply, false));
+                    chatAdapter.notifyItemInserted(chatMessages.size() - 1);
+                    recyclerViewChat.scrollToPosition(chatMessages.size() - 1);
+                }
+
+                @Override
+                public void onError(Exception e) {
+                    chatMessages.remove(thinkingIndex);
+                    chatAdapter.notifyItemRemoved(thinkingIndex);
+                    chatMessages.add(new ChatMessage("Có lỗi xảy ra: " + e.getMessage(), false));
+                    chatAdapter.notifyItemInserted(chatMessages.size() - 1);
+                }
+            });
+        }
     }
 
     private void greetUser() {

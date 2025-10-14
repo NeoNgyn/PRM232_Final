@@ -14,21 +14,23 @@ public class FoodItemDao {
         List<FoodItem> foodItems = new ArrayList<>();
 
         try (Connection connection = DatabaseConnection.getConnection()) {
-            String sql = "SELECT food_id, food_name, quantity FROM food_item WHERE user_id = ?";
+            String sql = "SELECT food_id, food_name, quantity " +
+                    "FROM fridgemanager.FoodItem " +
+                    "WHERE user_id = ?";
             PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setString(1, userId);
 
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
                 FoodItem item = new FoodItem();
-//                item.setFoodId(rs.getString("food_id"));
+                item.setFoodId(rs.getString("food_id"));
                 item.setFoodName(rs.getString("food_name"));
                 item.setQuantity(rs.getInt("quantity"));
                 foodItems.add(item);
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new RuntimeException("Không thể lấy danh sách FoodItem: " + e.getMessage(), e);
         }
 
         return foodItems;

@@ -68,7 +68,8 @@
             android:imeOptions="flagNoExtractUi"
             android:importantForAutofill="no"
             android:gravity="center_vertical"
-            android:cursorVisible="true" />
+            android:cursorVisible="true"
+            android:layout_marginBottom="20dp"/>
 
         <ImageButton
             android:id="@+id/btnSend"
@@ -79,7 +80,8 @@
             android:backgroundTint="#FF9800"
             android:src="@android:drawable/ic_menu_send"
             android:contentDescription="Gửi"
-            app:tint="#FFFFFF" />
+            app:tint="#FFFFFF"
+            android:layout_marginBottom="20dp"/>
     </LinearLayout>
 
 
