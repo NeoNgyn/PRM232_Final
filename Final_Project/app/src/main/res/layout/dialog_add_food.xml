@@ -6,15 +6,15 @@
     android:layout_height="wrap_content"
     android:background="@color/white">
 
-    <!-- Header -->
     <TextView
-        android:text="✨ Thêm thực phẩm mới"
-        android:textSize="20sp"
+        android:id="@+id/dialogTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Thêm thực phẩm"
+        android:textSize="22sp"
         android:textStyle="bold"
         android:textColor="@color/orange"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
+        android:layout_gravity="center_horizontal"
         android:layout_marginBottom="20dp"/>
 
     <!-- Form Fields in Card -->
@@ -85,6 +85,31 @@
                 android:background="@drawable/bg_edittext_default"
                 android:gravity="top"
                 android:textSize="16sp"/>
+
+            <!-- Image picker -->
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:layout_marginTop="8dp">
+
+                <ImageView
+                    android:id="@+id/ivPreview"
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/ic_food_placeholder"
+                    android:layout_marginEnd="12dp"/>
+
+                <Button
+                    android:id="@+id/btnPickImage"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:text="Chọn ảnh"
+                    android:background="@drawable/bg_button_secondary"
+                    android:textColor="@color/orange"/>
+            </LinearLayout>
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
