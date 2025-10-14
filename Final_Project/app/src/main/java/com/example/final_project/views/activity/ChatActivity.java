@@ -42,6 +42,7 @@ public class ChatActivity extends AppCompatActivity {
         recyclerViewChat.setAdapter(chatAdapter);
         btnSend.setOnClickListener(v -> sendMessage());
 
+        greetUser();
     }
 
     private void sendMessage() {
@@ -82,6 +83,20 @@ public class ChatActivity extends AppCompatActivity {
                 recyclerViewChat.scrollToPosition(chatMessages.size() - 1);
             }
         });
+    }
+
+    private void greetUser() {
+        String[] greetings = {
+                "Xin chào! Mình là MealTime 🍽️ – trợ lý gợi ý món ăn của bạn hôm nay!",
+                "Chào mừng bạn đến với MealTime 🤖! Muốn mình gợi ý bữa ăn ngon miệng chứ?",
+                "Hey! Đây là MealTime 😋 – cùng khám phá món ăn thú vị nào!",
+                "Xin chào, mình là MealTime AI. Hãy nói mình biết bạn có gì trong tủ lạnh nhé!"
+        };
+
+        String greeting = greetings[(int) (Math.random() * greetings.length)];
+        chatMessages.add(new ChatMessage(greeting, false));
+        chatAdapter.notifyItemInserted(chatMessages.size() - 1);
+        recyclerViewChat.scrollToPosition(chatMessages.size() - 1);
     }
 
 }
