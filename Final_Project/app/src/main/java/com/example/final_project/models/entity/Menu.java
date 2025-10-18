@@ -11,6 +11,7 @@ public class Menu {
     private Date toDate;
     private Date createdAt;
     private Date updatedAt;
+    private String imageUrl;
 
     // Quan hệ 1 - N
     private List<RecipeInMenu> recipeList;
@@ -84,6 +85,14 @@ public class Menu {
 
     public void setUpdatedAt(Date updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 
     public List<RecipeInMenu> getRecipeList() {
