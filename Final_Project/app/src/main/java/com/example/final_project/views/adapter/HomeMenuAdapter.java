@@ -4,6 +4,7 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.PopupMenu;
@@ -60,12 +61,10 @@ public class HomeMenuAdapter extends RecyclerView.Adapter<HomeMenuAdapter.MenuVi
             holder.ivMenuFoodImage.setImageResource(R.drawable.ic_food_placeholder);
         }
 
-        // Add long-click listener for context menu if action listener is provided
+        // Set click listeners for edit and delete buttons if action listener is provided
         if (actionListener != null) {
-            holder.itemView.setOnLongClickListener(v -> {
-                showContextMenu(v, item, position);
-                return true;
-            });
+            holder.btnEditMenu.setOnClickListener(v -> actionListener.onEditMenu(item, position));
+            holder.btnDeleteMenu.setOnClickListener(v -> actionListener.onDeleteMenu(item, position));
         }
     }
 
@@ -94,11 +93,14 @@ public class HomeMenuAdapter extends RecyclerView.Adapter<HomeMenuAdapter.MenuVi
     public static class MenuViewHolder extends RecyclerView.ViewHolder {
         ImageView ivMenuFoodImage;
         TextView tvMenuFoodName, tvMenuFoodDesc;
+        Button btnEditMenu, btnDeleteMenu;
         public MenuViewHolder(@NonNull View itemView) {
             super(itemView);
             ivMenuFoodImage = itemView.findViewById(R.id.ivMenuFoodImage);
             tvMenuFoodName = itemView.findViewById(R.id.tvMenuFoodName);
             tvMenuFoodDesc = itemView.findViewById(R.id.tvMenuFoodDesc);
+            btnEditMenu = itemView.findViewById(R.id.btnEditMenu);
+            btnDeleteMenu = itemView.findViewById(R.id.btnDeleteMenu);
         }
     }
 
