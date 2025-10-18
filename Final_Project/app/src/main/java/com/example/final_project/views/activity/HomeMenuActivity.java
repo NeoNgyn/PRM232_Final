@@ -1,101 +1,227 @@
 package com.example.final_project.views.activity;
 
+import android.app.AlertDialog;
+import android.content.Intent;
 import android.os.Bundle;
+import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.example.final_project.R;
+import com.example.final_project.utils.DatabaseConnection;
 import com.example.final_project.views.adapter.HomeMenuAdapter;
-import com.example.final_project.views.adapter.FeaturedFoodAdapter;
+import com.google.android.material.button.MaterialButton;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 
 public class HomeMenuActivity extends AppCompatActivity {
 
     private RecyclerView recyclerViewMenu;
-    private RecyclerView recyclerViewFeatured;
+    private RecyclerView recyclerViewTodayMenus;
+    private RecyclerView recyclerViewUpcomingMenus;
     private HomeMenuAdapter menuAdapter;
-    private FeaturedFoodAdapter featuredAdapter;
+    private HomeMenuAdapter todayMenusAdapter;
+    private HomeMenuAdapter upcomingMenusAdapter;
     private List<HomeMenuAdapter.MenuItem> menuList;
-    private List<FeaturedFoodAdapter.FeaturedFood> featuredList;
+    private List<HomeMenuAdapter.MenuItem> todayMenusList;
+    private List<HomeMenuAdapter.MenuItem> upcomingMenusList;
+    private MaterialButton fabAddMenu;
+
+    private final ExecutorService dbExecutor = Executors.newSingleThreadExecutor();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home_menu);
 
-        // Khởi tạo RecyclerView cho món nổi bật (ngang)
-        recyclerViewFeatured = findViewById(R.id.recyclerViewFeatured);
-        LinearLayoutManager featuredLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
-        recyclerViewFeatured.setLayoutManager(featuredLayoutManager);
-        recyclerViewFeatured.setHasFixedSize(true);
+        fabAddMenu = findViewById(R.id.fabAddMenu);
+        fabAddMenu.setOnClickListener(new android.view.View.OnClickListener() {
+            @Override
+            public void onClick(android.view.View v) {
+                openCreateMenuActivity();
+            }
+        });
 
-        // Khởi tạo RecyclerView cho menu (dọc)
+        setupTodayMenusRecyclerView();
+        setupUpcomingMenusRecyclerView();
+        setupMenuRecyclerView();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadMenuFromDatabase();
+    }
+
+    private void setupTodayMenusRecyclerView() {
+        recyclerViewTodayMenus = findViewById(R.id.recyclerViewTodayMenus);
+        recyclerViewTodayMenus.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+        recyclerViewTodayMenus.setHasFixedSize(true);
+
+        todayMenusList = new ArrayList<>();
+        todayMenusAdapter = new HomeMenuAdapter(this, todayMenusList, new HomeMenuAdapter.OnMenuActionListener() {
+            @Override
+            public void onEditMenu(HomeMenuAdapter.MenuItem menuItem, int position) {
+                showEditMenuDialog(menuItem);
+            }
+
+            @Override
+            public void onDeleteMenu(HomeMenuAdapter.MenuItem menuItem, int position) {
+                showDeleteMenuDialog(menuItem, position);
+            }
+        });
+        recyclerViewTodayMenus.setAdapter(todayMenusAdapter);
+    }
+
+    private void setupUpcomingMenusRecyclerView() {
+        recyclerViewUpcomingMenus = findViewById(R.id.recyclerViewUpcomingMenus);
+        recyclerViewUpcomingMenus.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+        recyclerViewUpcomingMenus.setHasFixedSize(true);
+
+        upcomingMenusList = new ArrayList<>();
+        upcomingMenusAdapter = new HomeMenuAdapter(this, upcomingMenusList, new HomeMenuAdapter.OnMenuActionListener() {
+            @Override
+            public void onEditMenu(HomeMenuAdapter.MenuItem menuItem, int position) {
+                showEditMenuDialog(menuItem);
+            }
+
+            @Override
+            public void onDeleteMenu(HomeMenuAdapter.MenuItem menuItem, int position) {
+                showDeleteMenuDialog(menuItem, position);
+            }
+        });
+        recyclerViewUpcomingMenus.setAdapter(upcomingMenusAdapter);
+    }
+
+    private void setupMenuRecyclerView() {
         recyclerViewMenu = findViewById(R.id.recyclerViewMenu);
         recyclerViewMenu.setLayoutManager(new LinearLayoutManager(this));
-        recyclerViewMenu.setHasFixedSize(true);
         recyclerViewMenu.setNestedScrollingEnabled(false);
 
-        // Khởi tạo dữ liệu
-        initFeaturedData();
-        initMenuData();
+        menuList = new ArrayList<>();
+        menuAdapter = new HomeMenuAdapter(this, menuList, new HomeMenuAdapter.OnMenuActionListener() {
+            @Override
+            public void onEditMenu(HomeMenuAdapter.MenuItem menuItem, int position) {
+                showEditMenuDialog(menuItem);
+            }
 
-        // Khởi tạo và gán adapter
-        featuredAdapter = new FeaturedFoodAdapter(this, featuredList);
-        recyclerViewFeatured.setAdapter(featuredAdapter);
-
-        menuAdapter = new HomeMenuAdapter(this, menuList);
+            @Override
+            public void onDeleteMenu(HomeMenuAdapter.MenuItem menuItem, int position) {
+                showDeleteMenuDialog(menuItem, position);
+            }
+        });
         recyclerViewMenu.setAdapter(menuAdapter);
     }
 
-    private void initFeaturedData() {
-        featuredList = new ArrayList<>();
+    private void loadMenuFromDatabase() {
+        dbExecutor.execute(() -> {
+            List<HomeMenuAdapter.MenuItem> loadedTodayList = new ArrayList<>();
+            List<HomeMenuAdapter.MenuItem> loadedUpcomingList = new ArrayList<>();
+            List<HomeMenuAdapter.MenuItem> loadedAllList = new ArrayList<>();
+            try (Connection conn = DatabaseConnection.getConnection()) {
+                if (conn == null) throw new SQLException("DB connection is null");
 
-        // Thêm 4 món ăn nổi bật như trong hình
-        featuredList.add(new FeaturedFoodAdapter.FeaturedFood("Bánh chưng", "banh_chung.jpg"));
-        featuredList.add(new FeaturedFoodAdapter.FeaturedFood("Bánh mì", "banh_mi.jpg"));
-        featuredList.add(new FeaturedFoodAdapter.FeaturedFood("Thịt kho tàu", "thit_kho_tau.jpg"));
-        featuredList.add(new FeaturedFoodAdapter.FeaturedFood("Chả cá", "cha_ca.jpg"));
+                java.sql.Date currentDate = new java.sql.Date(System.currentTimeMillis());
+
+                String sql = "SELECT menu_id, menu_name, image_url, description, from_date, to_date FROM Menu ORDER BY create_at DESC";
+                try (PreparedStatement stmt = conn.prepareStatement(sql); ResultSet rs = stmt.executeQuery()) {
+                    while (rs.next()) {
+                        HomeMenuAdapter.MenuItem item = new HomeMenuAdapter.MenuItem(
+                                rs.getString("menu_id"),
+                                rs.getString("menu_name"),
+                                rs.getString("image_url"),
+                                rs.getString("description"),
+                                rs.getString("from_date"),
+                                rs.getString("to_date")
+                        );
+
+                        java.sql.Date fromDate = rs.getDate("from_date");
+                        java.sql.Date toDate = rs.getDate("to_date");
+
+                        if (fromDate != null && toDate != null &&
+                            !currentDate.before(fromDate) && !currentDate.after(toDate)) {
+                            loadedTodayList.add(item);
+                        }
+                        else if (fromDate != null && fromDate.after(currentDate)) {
+                            loadedUpcomingList.add(item);
+                        }
+
+                        loadedAllList.add(item);
+                    }
+                }
+                runOnUiThread(() -> {
+                    todayMenusList.clear();
+                    todayMenusList.addAll(loadedTodayList.size() > 4 ? loadedTodayList.subList(0, 4) : loadedTodayList);
+                    todayMenusAdapter.notifyDataSetChanged();
+
+                    upcomingMenusList.clear();
+                    upcomingMenusList.addAll(loadedUpcomingList.size() > 4 ? loadedUpcomingList.subList(0, 4) : loadedUpcomingList);
+                    upcomingMenusAdapter.notifyDataSetChanged();
+
+                    menuList.clear();
+                    menuList.addAll(loadedAllList);
+                    menuAdapter.notifyDataSetChanged();
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
+                runOnUiThread(() -> Toast.makeText(HomeMenuActivity.this, "Error loading menus.", Toast.LENGTH_SHORT).show());
+            }
+        });
     }
 
-    private void initMenuData() {
-        menuList = new ArrayList<>();
+    private void openCreateMenuActivity() {
+        Intent intent = new Intent(this, CreateMenuActivity.class);
+        startActivity(intent);
+    }
 
-        // Thêm dữ liệu mẫu cho menu - tên file ảnh phải khớp với thư mục assets/food_images/
-        menuList.add(new HomeMenuAdapter.MenuItem(
-            "Bún chả",
-            "bun_cha.jpg",
-            "Bún chả Hà Nội với thịt nướng thơm ngon, nước mắm chua ngọt."
-        ));
+    private void showEditMenuDialog(HomeMenuAdapter.MenuItem menuItem) {
+        Intent intent = new Intent(this, CreateMenuActivity.class);
+        intent.putExtra("menu_id", menuItem.getMenuId());
+        startActivity(intent);
+    }
 
-        menuList.add(new HomeMenuAdapter.MenuItem(
-            "Phở Bò",
-            "pho_bo.jpg",
-            "Món phở truyền thống Việt Nam với nước dùng thơm ngon, bánh phở mềm và thịt bò tươi"
-        ));
+    private void showDeleteMenuDialog(HomeMenuAdapter.MenuItem menuItem, int position) {
+        new AlertDialog.Builder(this)
+                .setTitle("Delete Menu")
+                .setMessage("Are you sure you want to delete '" + menuItem.getName() + "'?")
+                .setPositiveButton("Delete", (dialog, which) -> deleteMenuFromDb(menuItem.getMenuId(),
+                        () -> {
+                            Toast.makeText(this, "Menu deleted successfully", Toast.LENGTH_SHORT).show();
+                            loadMenuFromDatabase(); // Reload all data
+                        },
+                        error -> Toast.makeText(this, "Failed to delete menu: " + error, Toast.LENGTH_SHORT).show()))
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
 
-        menuList.add(new HomeMenuAdapter.MenuItem(
-            "Cơm Tấm",
-            "com_tam.jpg",
-            "Cơm tấm Sài Gòn truyền thống với sườn nướng, bì, chả, trứng và nước mắm"
-        ));
+    private void deleteMenuFromDb(String menuId, Runnable onSuccess, Consumer<String> onError) {
+        dbExecutor.execute(() -> {
+            try (Connection conn = DatabaseConnection.getConnection()) {
+                if (conn == null) throw new SQLException("DB connection is null");
 
-        menuList.add(new HomeMenuAdapter.MenuItem(
-            "Bánh Xèo",
-            "banh_xeo.jpg",
-            "Bánh xèo miền Tây giòn tan với nhân tôm thịt, giá đỗ, ăn kèm rau sống"
-        ));
-
-        menuList.add(new HomeMenuAdapter.MenuItem(
-            "Gỏi Cuốn",
-            "goi_cuon.jpg",
-            "Gỏi cuốn tươi mát với tôm thịt, bún, rau sống và nước chấm đậu phộng đặc biệt"
-        ));
-
-        menuList.add(new HomeMenuAdapter.MenuItem(
-            "Bún Bò Huế",
-            "bun_bo_hue.jpg",
-            "Bún bò Huế cay nồng với nước dùng đậm đà, thịt bò và chả cua"
-        ));
+                String sql = "DELETE FROM Menu WHERE menu_id=?";
+                try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                    stmt.setString(1, menuId);
+                    if (stmt.executeUpdate() > 0) {
+                        runOnUiThread(onSuccess);
+                    } else {
+                        throw new SQLException("Delete failed. Menu not found.");
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                runOnUiThread(() -> onError.accept(e.getMessage()));
+            }
+        });
     }
 }

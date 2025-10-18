@@ -18,9 +18,10 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:background="@android:color/white"
-            android:padding="16dp">
+            android:padding="16dp"
+            android:elevation="4dp">
 
-            <!-- Lời chào -->
+            <!-- Lời chào và Create Menu Button -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -48,7 +49,25 @@
                     android:layout_width="24dp"
                     android:layout_height="24dp"
                     android:src="@android:drawable/ic_menu_today"
-                    android:contentDescription="Calendar icon" />
+                    android:contentDescription="Calendar icon"
+                    android:layout_marginEnd="12dp" />
+
+                <!-- Create Menu Button -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/fabAddMenu"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:text="Tạo mới"
+                    android:textSize="13sp"
+                    android:textColor="@android:color/white"
+                    android:paddingHorizontal="16dp"
+                    app:backgroundTint="#2196F3"
+                    app:cornerRadius="20dp"
+                    app:icon="@android:drawable/ic_menu_add"
+                    app:iconGravity="textStart"
+                    app:iconSize="20dp"
+                    app:iconTint="@android:color/white"
+                    style="@style/Widget.MaterialComponents.Button" />
 
             </LinearLayout>
 
@@ -91,28 +110,60 @@
 
         </LinearLayout>
 
-        <!-- Section món ăn nổi bật -->
+        <!-- Section menu hôm nay -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:background="@android:color/white"
-            android:layout_marginTop="8dp"
-            android:paddingVertical="16dp">
+            android:layout_marginTop="12dp"
+            android:paddingVertical="16dp"
+            android:elevation="2dp">
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Món ăn nổi bật hôm nay"
+                android:text="🍽️ Menu hôm nay"
                 android:textSize="18sp"
                 android:textStyle="bold"
-                android:textColor="#333"
+                android:textColor="#2196F3"
                 android:paddingHorizontal="16dp"
                 android:layout_marginBottom="12dp" />
 
-            <!-- RecyclerView ngang cho món nổi bật -->
+            <!-- RecyclerView ngang cho menu hôm nay -->
             <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recyclerViewFeatured"
+                android:id="@+id/recyclerViewTodayMenus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingHorizontal="8dp"
+                tools:listitem="@layout/item_featured_food" />
+
+        </LinearLayout>
+
+        <!-- Section menu sắp tới -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@android:color/white"
+            android:layout_marginTop="12dp"
+            android:paddingVertical="16dp"
+            android:elevation="2dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="📅 Menu sắp tới"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="#2196F3"
+                android:paddingHorizontal="16dp"
+                android:layout_marginBottom="12dp" />
+
+            <!-- RecyclerView ngang cho menu sắp tới -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerViewUpcomingMenus"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
@@ -127,16 +178,18 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:background="@android:color/white"
-            android:layout_marginTop="8dp"
-            android:paddingVertical="16dp">
+            android:layout_marginTop="12dp"
+            android:paddingVertical="16dp"
+            android:elevation="2dp"
+            android:layout_marginBottom="16dp">
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Menu món ăn hôm nay"
+                android:text="📋 Tất cả menu món ăn"
                 android:textSize="18sp"
                 android:textStyle="bold"
-                android:textColor="#333"
+                android:textColor="#2196F3"
                 android:paddingHorizontal="16dp"
                 android:layout_marginBottom="12dp" />
 
@@ -150,7 +203,6 @@
                 tools:listitem="@layout/item_home_menu" />
 
         </LinearLayout>
-
     </LinearLayout>
 
-</androidx.core.widget.NestedScrollView>
+    </androidx.core.widget.NestedScrollView>
