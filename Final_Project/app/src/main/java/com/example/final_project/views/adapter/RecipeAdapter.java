@@ -34,9 +34,11 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
 
     @Override
     public void onBindViewHolder(@NonNull RecipeViewHolder holder, int position) {
-        RecipeInMenu recipe = recipes.get(position);
-        android.util.Log.d("RecipeAdapter", "Binding recipe " + position + ": " + recipe.getRecipe());
-//        holder.bind(recipe);
+        RecipeInMenu recipeInMenu = recipes.get(position);
+        android.util.Log.d("RecipeAdapter", "Binding recipe " + position + ": " + recipeInMenu.getRecipe());
+        if (recipeInMenu.getRecipe() != null) {
+            holder.bind(recipeInMenu.getRecipe());
+        }
     }
 
     @Override
