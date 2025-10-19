@@ -61,6 +61,28 @@ public class HomeMenuAdapter extends RecyclerView.Adapter<HomeMenuAdapter.MenuVi
             holder.ivMenuFoodImage.setImageResource(R.drawable.ic_food_placeholder);
         }
 
+        // Sửa: Khi bấm nút Edit, chuyển sang CreateRecipeActivity và truyền dữ liệu
+        holder.btnEditMenu.setOnClickListener(v -> {
+            android.content.Intent intent = new android.content.Intent(context, com.example.final_project.views.activity.CreateRecipeActivity.class);
+            // Send both keys to be compatible with different receivers
+            intent.putExtra("menuId", item.getMenuId());
+            intent.putExtra("menu_id", item.getMenuId());
+            intent.putExtra("name", item.getName());
+            intent.putExtra("description", item.getDesc());
+            intent.putExtra("imageUrl", item.getImageName());
+            intent.putExtra("fromDate", item.getFromDate());
+            intent.putExtra("toDate", item.getToDate());
+            intent.putExtra("note", ""); // Nếu có trường note thì truyền, nếu không thì để rỗng
+            context.startActivity(intent);
+        });
+
+        // Item click listener to open RecipeListActivity
+        holder.itemView.setOnClickListener(v -> {
+            android.content.Intent intent = new android.content.Intent(context, com.example.final_project.views.activity.RecipeListActivity.class);
+            intent.putExtra("menu_id", item.getMenuId());
+            context.startActivity(intent);
+        });
+
         // Set click listeners for edit and delete buttons if action listener is provided
         if (actionListener != null) {
             holder.btnEditMenu.setOnClickListener(v -> actionListener.onEditMenu(item, position));
@@ -140,4 +162,3 @@ public class HomeMenuAdapter extends RecyclerView.Adapter<HomeMenuAdapter.MenuVi
         public String getToDate() { return toDate; }
     }
 }
-
