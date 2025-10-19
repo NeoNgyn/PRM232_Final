@@ -41,7 +41,7 @@
 <!--            android:exported="false" />-->
 
         <activity
-            android:name=".views.activity.FridgeInventoryActivity"
+            android:name=".views.activity.HomeMenuActivity"
             android:exported="true">   <intent-filter>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
@@ -60,6 +60,10 @@
             android:name=".MainActivity"
             android:exported="true">
         </activity>
+        <!--  Add-ons  -->
+        <activity android:name=".views.activity.CreateMenuActivity" />
+        <activity android:name=".views.activity.CreateRecipeActivity" />
+        <activity android:name=".views.activity.RecipeListActivity" />
 
     </application>
 
