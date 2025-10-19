@@ -45,11 +45,9 @@ public class HomeMenuActivity extends AppCompatActivity {
         setContentView(R.layout.activity_home_menu);
 
         fabAddMenu = findViewById(R.id.fabAddMenu);
-        fabAddMenu.setOnClickListener(new android.view.View.OnClickListener() {
-            @Override
-            public void onClick(android.view.View v) {
-                openCreateMenuActivity();
-            }
+        fabAddMenu.setOnClickListener(v -> {
+            Intent intent = new Intent(HomeMenuActivity.this, CreateMenuActivity.class);
+            startActivity(intent);
         });
 
         setupTodayMenusRecyclerView();
