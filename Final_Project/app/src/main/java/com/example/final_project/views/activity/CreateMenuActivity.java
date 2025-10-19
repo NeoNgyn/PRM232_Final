@@ -17,6 +17,7 @@ import com.example.final_project.R;
 import com.example.final_project.models.entity.Menu;
 import com.example.final_project.utils.DatabaseConnection;
 import com.example.final_project.utils.CloudinaryHelper;
+import com.example.final_project.utils.DBMigrationHelper;
 import com.bumptech.glide.Glide;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -25,6 +26,7 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.Calendar;
 import android.app.DatePickerDialog;
+import android.util.Log;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.sql.Connection;
@@ -42,10 +44,10 @@ public class CreateMenuActivity extends AppCompatActivity {
     private String existingMenuId = null;
     private String existingImageUrl = null;
     private boolean isEditMode = false;
-    private SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
-    private SimpleDateFormat sqlDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+    private static final String TAG = "CreateMenuActivity";
+    private final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
 
-    private ExecutorService dbExecutor = Executors.newSingleThreadExecutor();
+    private final ExecutorService dbExecutor = Executors.newSingleThreadExecutor();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,11 +62,22 @@ public class CreateMenuActivity extends AppCompatActivity {
         Button btnUploadImage = findViewById(R.id.btnUploadImage);
         Button btnSaveMenu = findViewById(R.id.btnSaveMenu);
         ImageButton btnBack = findViewById(R.id.btnBack);
+        Button btnAddRecipe = findViewById(R.id.btnAddRecipe);
 
         btnUploadImage.setOnClickListener(v -> openImagePicker());
         btnSaveMenu.setOnClickListener(v -> saveMenu());
         btnBack.setOnClickListener(v -> finish());
-        
+        btnAddRecipe.setOnClickListener(v -> {
+            // Only allow adding a recipe if we are editing an existing (saved) menu
+            if (isEditMode && existingMenuId != null && !existingMenuId.isEmpty()) {
+                Intent intent = new Intent(CreateMenuActivity.this, CreateRecipeActivity.class);
+                intent.putExtra("menu_id", existingMenuId);
+                startActivity(intent);
+            } else {
+                Toast.makeText(CreateMenuActivity.this, "Please save the menu first before adding recipes.", Toast.LENGTH_SHORT).show();
+            }
+        });
+
         // Setup date pickers
         etFromDate.setOnClickListener(v -> showDatePicker(etFromDate, "Select From Date"));
         etToDate.setOnClickListener(v -> showDatePicker(etToDate, "Select To Date"));
@@ -76,6 +89,18 @@ public class CreateMenuActivity extends AppCompatActivity {
             isEditMode = true;
             loadMenuData(existingMenuId);
         }
+
+        // Run normalization in background at startup to fix any existing long menu_ids
+        dbExecutor.execute(() -> {
+            try (Connection conn = DatabaseConnection.getConnection()) {
+                if (conn != null) {
+                    int changed = DBMigrationHelper.normalizeMenuIds(conn);
+                    if (changed > 0) Log.i(TAG, "Normalized existing menu_ids on startup: changed=" + changed);
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Normalization on startup failed", e);
+            }
+        });
     }
 
     private void loadMenuData(String menuId) {
@@ -108,18 +133,31 @@ public class CreateMenuActivity extends AppCompatActivity {
                                 }
                                 
                                 if (imageUrl != null && !imageUrl.isEmpty()) {
-                                    Glide.with(CreateMenuActivity.this)
-                                            .load(imageUrl)
-                                            .placeholder(R.drawable.ic_launcher_background)
-                                            .error(R.drawable.ic_launcher_background)
-                                            .into(imageMenu);
+                                    try {
+                                        if (imageUrl.startsWith("content://") || imageUrl.startsWith("file://")) {
+                                            android.net.Uri uri = android.net.Uri.parse(imageUrl);
+                                            Glide.with(CreateMenuActivity.this)
+                                                    .load(uri)
+                                                    .placeholder(R.drawable.ic_launcher_background)
+                                                    .error(R.drawable.ic_launcher_background)
+                                                    .into(imageMenu);
+                                        } else {
+                                            Glide.with(CreateMenuActivity.this)
+                                                    .load(imageUrl)
+                                                    .placeholder(R.drawable.ic_launcher_background)
+                                                    .error(R.drawable.ic_launcher_background)
+                                                    .into(imageMenu);
+                                        }
+                                    } catch (Exception ex) {
+                                        imageMenu.setImageResource(R.drawable.ic_launcher_background);
+                                    }
                                 }
                             });
                         }
                     }
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                Log.e(TAG, "Error loading menu data", e);
                 runOnUiThread(() -> Toast.makeText(this, "Error loading menu data: " + e.getMessage(), Toast.LENGTH_SHORT).show());
             }
         });
@@ -137,11 +175,11 @@ public class CreateMenuActivity extends AppCompatActivity {
                     calendar.setTime(date);
                 }
             } catch (ParseException e) {
-                e.printStackTrace();
+                Log.e(TAG, "Date parse error", e);
             }
         }
         
-        new DatePickerDialog(this,
+        DatePickerDialog dialog = new DatePickerDialog(this,
                 (view, year, month, dayOfMonth) -> {
                     calendar.set(year, month, dayOfMonth);
                     editText.setText(dateFormat.format(calendar.getTime()));
@@ -149,13 +187,19 @@ public class CreateMenuActivity extends AppCompatActivity {
                 calendar.get(Calendar.YEAR),
                 calendar.get(Calendar.MONTH),
                 calendar.get(Calendar.DAY_OF_MONTH)
-        ).show();
+        );
+        // Use provided title to avoid unused parameter warning
+        if (title != null && !title.isEmpty()) dialog.setTitle(title);
+        dialog.show();
     }
 
     private void openImagePicker() {
         Intent intent = new Intent();
+        // Use ACTION_OPEN_DOCUMENT so we can take persistable permission for the chosen Uri
         intent.setType("image/*");
-        intent.setAction(Intent.ACTION_GET_CONTENT);
+        intent.setAction(Intent.ACTION_OPEN_DOCUMENT);
+        // Grant temporary read permission and request persistable permission
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
         startActivityForResult(Intent.createChooser(intent, "Select Picture"), PICK_IMAGE_REQUEST);
     }
 
@@ -165,10 +209,18 @@ public class CreateMenuActivity extends AppCompatActivity {
         if (requestCode == PICK_IMAGE_REQUEST && resultCode == Activity.RESULT_OK && data != null && data.getData() != null) {
             imageUri = data.getData();
             try {
+                // Persist read permission so the app can read this URI later (important for content:// URIs)
+                try {
+                    final int takeFlags = data.getFlags() & (Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+                    getContentResolver().takePersistableUriPermission(imageUri, takeFlags);
+                } catch (SecurityException se) {
+                    Log.w(TAG, "Could not take persistable uri permission", se);
+                }
+
                 Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
                 imageMenu.setImageBitmap(bitmap);
             } catch (IOException e) {
-                e.printStackTrace();
+                Log.e(TAG, "Error loading picked image", e);
             }
         }
     }
@@ -219,7 +271,7 @@ public class CreateMenuActivity extends AppCompatActivity {
                 toDate = dateFormat.parse(toDateStr);
             }
         } catch (ParseException e) {
-            e.printStackTrace();
+            Log.e(TAG, "Date parse error", e);
         }
 
         Menu menuToSave = new Menu(existingMenuId, name, null, description, fromDate, toDate, null, null);
@@ -263,16 +315,41 @@ public class CreateMenuActivity extends AppCompatActivity {
     private void insertMenuToDb(Menu menu, Runnable onSuccess, Consumer<String> onError) {
         dbExecutor.execute(() -> {
             try (Connection conn = DatabaseConnection.getConnection()) {
-                if (conn == null) throw new SQLException("DB connection is null");
+                // Normalize any existing bad menu_id values (long/timestamp-based) so our next ID generation is stable
+                try {
+                    int changed = DBMigrationHelper.normalizeMenuIds(conn);
+                    if (changed > 0) {
+                        Log.i(TAG, "Normalized existing menu_ids before insert: changed=" + changed);
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to normalize menu ids", e);
+                    // proceed anyway; generation logic below ignores long IDs
+                }
+                 if (conn == null) throw new SQLException("DB connection is null");
 
                 String sql = "INSERT INTO Menu (menu_id, menu_name, image_url, description, from_date, to_date, create_at, update_at) VALUES (?,?,?,?,?,?,?,?)";
-                try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                    String id = menu.getMenuId();
-                    if (id == null || id.isEmpty()) {
-                        id = "M" + String.format("%09d", System.currentTimeMillis() % 1000000000L);
+                // Determine menu id: if caller didn't provide one, generate sequential M001, M002, ...
+                String id = menu.getMenuId();
+                if (id == null || id.isEmpty()) {
+                    // Find current max numeric suffix of menu_id like 'M123' and increment
+                    // Only consider existing menu_ids in the short numeric format (M, followed by 1-3 digits)
+                    try (PreparedStatement stmtMax = conn.prepareStatement(
+                            "SELECT MAX(CAST(SUBSTRING(menu_id,2) AS UNSIGNED)) AS maxnum FROM Menu WHERE menu_id REGEXP '^M[0-9]{1,3}$'")) {
+                        try (java.sql.ResultSet rsMax = stmtMax.executeQuery()) {
+                            int max = 0;
+                            if (rsMax.next()) {
+                                max = rsMax.getInt("maxnum");
+                                if (rsMax.wasNull()) max = 0;
+                            }
+                            int next = max + 1;
+                            id = String.format(java.util.Locale.US, "M%03d", next);
+                        }
                     }
-                    if (id.length() > 10) id = id.substring(0, 10);
+                }
 
+                try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                    // ensure id not too long (defensive)
+                    if (id.length() > 16) id = id.substring(0, 16);
                     stmt.setString(1, id);
                     stmt.setString(2, menu.getMenuName());
                     stmt.setString(3, menu.getImageUrl());
@@ -300,7 +377,7 @@ public class CreateMenuActivity extends AppCompatActivity {
                     runOnUiThread(onSuccess);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                Log.e(TAG, "Error inserting menu", e);
                 runOnUiThread(() -> onError.accept(e.getMessage()));
             }
         });
@@ -338,7 +415,7 @@ public class CreateMenuActivity extends AppCompatActivity {
                     runOnUiThread(onSuccess);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                Log.e(TAG, "Error updating menu", e);
                 runOnUiThread(() -> onError.accept(e.getMessage()));
             }
         });
