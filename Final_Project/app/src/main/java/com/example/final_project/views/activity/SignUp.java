@@ -18,6 +18,15 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
 import com.example.final_project.R;
+import com.example.final_project.utils.DatabaseConnection;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+
 
 public class SignUp extends AppCompatActivity {
 
@@ -80,6 +89,43 @@ public class SignUp extends AppCompatActivity {
             Intent intent = new Intent(SignUp.this, Login.class);
             startActivity(intent);
             finish();
+        });
+
+        btnCreateAccount.setOnClickListener(v -> {
+            String fullname = etFullName.getText().toString().trim();
+            String email = etEmail.getText().toString().trim();
+            String password = etPassword.getText().toString().trim();
+
+            if (fullname.isEmpty() || email.isEmpty() || password.isEmpty() || !cbTerms.isChecked()) {
+                return;
+            }
+
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            executor.execute(() -> {
+                final boolean emailExists = isEmailExists(email);
+
+                if (emailExists) {
+                    runOnUiThread(() -> {
+                        android.widget.Toast.makeText(SignUp.this, "Email already exists!", android.widget.Toast.LENGTH_SHORT).show();
+                    });
+                    return;
+                }
+
+
+                String userId = generateNewUserId();
+                final boolean userInserted = insertUser(userId, fullname, email, password);
+
+                runOnUiThread(() -> {
+                    if (userInserted) {
+                        android.widget.Toast.makeText(SignUp.this, "Account created successfully!", android.widget.Toast.LENGTH_SHORT).show();
+                        Intent intent = new Intent(SignUp.this, Login.class);
+                        startActivity(intent);
+                        finish();
+                    } else {
+                        android.widget.Toast.makeText(SignUp.this, "Failed to create account. Please try again.", android.widget.Toast.LENGTH_SHORT).show();
+                    }
+                });
+            });
         });
 
         validateFields();
@@ -210,5 +256,58 @@ public class SignUp extends AppCompatActivity {
     private void setDefaultUI(EditText editText) {
         editText.setBackgroundResource(R.drawable.bg_edittext_default);
         editText.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
+    }
+
+    // Kiểm tra email đã tồn tại chưa
+    private boolean isEmailExists(String email) {
+        String sql = "SELECT user_id FROM User WHERE email = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, email);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    // Tạo user_id mới
+    private String generateNewUserId() {
+        String sql = "SELECT MAX(user_id) AS max_id FROM User";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            String newId = "U001";
+            if (rs.next()) {
+                String maxId = rs.getString("max_id");
+                if (maxId != null && maxId.startsWith("U")) {
+                    int num = Integer.parseInt(maxId.substring(1)) + 1;
+                    newId = String.format("U%03d", num);
+                }
+            }
+            return newId;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "U001";
+    }
+
+    // Thêm user mới vào database
+    private boolean insertUser(String userId, String fullname, String email, String hashedPassword) {
+        String sql = "INSERT INTO User (user_id, fullname, email, password) VALUES (?, ?, ?, ?)";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, userId);
+            stmt.setString(2, fullname);
+            stmt.setString(3, email);
+            stmt.setString(4, hashedPassword);
+            int rows = stmt.executeUpdate();
+            return rows > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 }

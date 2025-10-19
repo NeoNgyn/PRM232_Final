@@ -19,7 +19,7 @@ public class Menu {
     public Menu() {}
 
     public Menu(String menuId, String menuName, String imageUrl, String description, Date fromDate, Date toDate,
-                Date createdAt, Date updatedAt) {
+                Date createdAt, Date updatedAt ) {
         this.menuId = menuId;
         this.menuName = menuName;
         this.imageUrl = imageUrl;
@@ -46,14 +46,6 @@ public class Menu {
 
     public void setMenuName(String menuName) {
         this.menuName = menuName;
-    }
-
-    public String getImageUrl() {
-        return imageUrl;
-    }
-
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
     }
 
     public String getDescription() {
@@ -94,6 +86,14 @@ public class Menu {
 
     public void setUpdatedAt(Date updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 
     public List<RecipeInMenu> getRecipeList() {
