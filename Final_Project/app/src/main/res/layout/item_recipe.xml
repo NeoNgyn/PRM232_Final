@@ -1,49 +1,69 @@
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="200dp"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
     app:cardCornerRadius="12dp"
     app:cardElevation="4dp">
 
-    <LinearLayout
+    <!-- dùng FrameLayout để có thể overlay nút xóa ở góc phải trên -->
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="8dp">
+        android:layout_height="wrap_content">
 
-        <ImageView
-            android:id="@+id/image_recipe"
-            android:layout_width="match_parent"
-            android:layout_height="120dp"
-            android:scaleType="centerCrop"
-            android:src="@drawable/ic_food_placeholder"
-            android:contentDescription="@string/food_image"
-            app:cardCornerRadius="8dp"
-            android:layout_marginBottom="8dp" />
-
-        <TextView
-            android:id="@+id/text_recipe_name"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Tên món ăn"
-            android:textStyle="bold"
-            android:textSize="16sp"
-            android:textColor="#222"
-            android:gravity="center"
-            android:layout_marginBottom="4dp" />
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:padding="8dp">
 
-        <TextView
-            android:id="@+id/text_recipe_description"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Mô tả ngắn về món ăn"
-            android:textSize="12sp"
-            android:textColor="#666"
-            android:gravity="center"
-            android:maxLines="3"
-            android:ellipsize="end"
-            android:lineSpacingExtra="2dp" />
-    </LinearLayout>
+            <ImageView
+                android:id="@+id/image_recipe"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:scaleType="centerCrop"
+                android:src="@drawable/ic_food_placeholder"
+                android:contentDescription="@string/food_image"
+                app:cardCornerRadius="8dp"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:id="@+id/text_recipe_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/recipe_name_default"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:textColor="#222"
+                android:gravity="center"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:id="@+id/text_recipe_description"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/recipe_desc_default"
+                android:textSize="12sp"
+                android:textColor="#666"
+                android:gravity="center"
+                android:maxLines="3"
+                android:ellipsize="end"
+                android:lineSpacingExtra="2dp" />
+        </LinearLayout>
+
+        <!-- Nút xóa nhỏ ở góc phải trên -->
+        <ImageButton
+            android:id="@+id/btn_delete_recipe"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_margin="6dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_menu_delete"
+            android:contentDescription="@string/delete_recipe"
+            app:tint="@android:color/holo_red_dark"
+            android:layout_gravity="end|top" />
+
+    </FrameLayout>
 
 </androidx.cardview.widget.CardView>
