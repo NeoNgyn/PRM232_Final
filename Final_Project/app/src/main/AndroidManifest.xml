@@ -64,6 +64,7 @@
         <activity android:name=".views.activity.CreateMenuActivity" />
         <activity android:name=".views.activity.CreateRecipeActivity" />
         <activity android:name=".views.activity.RecipeListActivity" />
+        <activity android:name=".views.activity.RecipeDetailActivity" />
 
     </application>
 
