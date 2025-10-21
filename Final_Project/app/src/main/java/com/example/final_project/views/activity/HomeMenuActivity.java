@@ -48,7 +48,7 @@ public class HomeMenuActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_home_menu);
+        setContentView(R.layout.home);
 
         fabAddMenu = findViewById(R.id.fabAddMenu);
         fabAddMenu.setOnClickListener(v -> {
