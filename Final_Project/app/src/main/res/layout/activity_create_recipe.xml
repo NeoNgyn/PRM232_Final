@@ -10,15 +10,32 @@
         android:orientation="vertical"
         android:padding="20dp">
 
-        <TextView
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Create New Recipe"
-            android:textColor="#FF8C00"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginBottom="20dp" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="16dp">
+
+            <ImageButton
+                android:id="@+id/btnBack"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:src="@android:drawable/ic_menu_revert"
+                android:background="?android:attr/selectableItemBackground"
+                android:contentDescription="Back button"
+                 />
+
+            <TextView
+                android:id="@+id/tvHeader"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/create_recipe_header"
+                android:textColor="#FF8C00"
+                android:textStyle="bold"
+                android:textSize="22sp"
+                android:gravity="center" />
+        </LinearLayout>
 
         <ImageView
             android:id="@+id/imageRecipePreview"
@@ -49,10 +66,10 @@
             android:padding="10dp" />
 
         <EditText
-            android:id="@+id/etRecipeDescription"
+            android:id="@+id/etRecipeInstruction"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Description"
+            android:hint="Instruction"
             android:layout_marginTop="10dp"
             android:backgroundTint="#FF8C00"
             android:textColor="#000"
@@ -60,10 +77,10 @@
             android:padding="10dp" />
 
         <EditText
-            android:id="@+id/etRecipeNote"
+            android:id="@+id/etRecipeNutrition"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Notes (optional)"
+            android:hint="Nutrition (optional)"
             android:layout_marginTop="10dp"
             android:backgroundTint="#FF8C00"
             android:textColor="#000"
