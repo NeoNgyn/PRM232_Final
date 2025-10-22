@@ -6,6 +6,7 @@ import java.sql.DriverManager;
 public class DatabaseConnection {
 
     private static final String URL = "jdbc:mysql://10.0.2.2:3306/FridgeManager"; // 10.0.2.2 = localhost của máy thật
+//    private static final String URL = "jdbc:mysql://192.168.137.192:3306/FridgeManager"; // 10.0.2.2 = localhost của máy thật
     private static final String USER = "root";
     private static final String PASSWORD = "12345";
 
