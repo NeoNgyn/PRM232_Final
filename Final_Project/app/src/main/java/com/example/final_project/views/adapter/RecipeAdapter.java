@@ -63,6 +63,28 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         } else {
             holder.btnDelete.setOnClickListener(null);
         }
+        holder.btnEdit.setOnClickListener(v -> {
+            int pos = holder.getBindingAdapterPosition();
+            if (pos != RecyclerView.NO_POSITION && recipeInMenu.getRecipe() != null) {
+                android.content.Context ctx = holder.itemView.getContext();
+                android.content.Intent intent = new android.content.Intent(ctx, com.example.final_project.views.activity.CreateRecipeActivity.class);
+                intent.putExtra("recipe", (java.io.Serializable) recipeInMenu.getRecipe());
+                if (recipeInMenu.getMenu() != null && recipeInMenu.getMenu().getMenuId() != null) {
+                    intent.putExtra("menu_id", recipeInMenu.getMenu().getMenuId());
+                }
+                ctx.startActivity(intent);
+            }
+        });
+        // Thêm sự kiện click cho itemView để mở RecipeDetailActivity
+        holder.itemView.setOnClickListener(v -> {
+            int pos = holder.getBindingAdapterPosition();
+            if (pos != RecyclerView.NO_POSITION && recipeInMenu.getRecipe() != null) {
+                android.content.Context ctx = holder.itemView.getContext();
+                android.content.Intent intent = new android.content.Intent(ctx, com.example.final_project.views.activity.RecipeDetailActivity.class);
+                intent.putExtra("recipe", (java.io.Serializable) recipeInMenu.getRecipe());
+                ctx.startActivity(intent);
+            }
+        });
     }
 
     @Override
@@ -77,6 +99,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         private TextView textRecipeName;
         private TextView textRecipeDescription;
         ImageButton btnDelete;
+        ImageButton btnEdit;
 
         public RecipeViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -84,6 +107,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
             textRecipeName = itemView.findViewById(R.id.text_recipe_name);
             textRecipeDescription = itemView.findViewById(R.id.text_recipe_description);
             btnDelete = itemView.findViewById(R.id.btn_delete_recipe);
+            btnEdit = itemView.findViewById(R.id.btn_edit_recipe);
         }
 
         public void bind(Recipe recipe) {
@@ -95,41 +119,52 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
             }
             textRecipeName.setText(recipe.getName() != null ? recipe.getName() : "No name");
             textRecipeDescription.setText(recipe.getInstruction() != null ? recipe.getInstruction() : "");
-            // Sử dụng Glide để load ảnh từ image_url
             String imageUrl = recipe.getImageUrl();
             if (imageUrl != null && !imageUrl.isEmpty()) {
                 try {
                     android.content.Context ctx = itemView.getContext();
-                    // If it's a content:// or file:// URI, parse and load directly
-                    if (imageUrl.startsWith("content://") || imageUrl.startsWith("file://")) {
+                    if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
+                        // Web URL
+                        com.bumptech.glide.Glide.with(ctx)
+                                .load(imageUrl)
+                                .placeholder(R.drawable.ic_food_placeholder)
+                                .error(R.drawable.ic_food_placeholder)
+                                .into(imageRecipe);
+                    } else if (imageUrl.startsWith("content://") || imageUrl.startsWith("file://")) {
+                        // Content URI or file URI
                         android.net.Uri uri = android.net.Uri.parse(imageUrl);
                         com.bumptech.glide.Glide.with(ctx)
                                 .load(uri)
                                 .placeholder(R.drawable.ic_food_placeholder)
                                 .error(R.drawable.ic_food_placeholder)
                                 .into(imageRecipe);
-                    } else {
-                        // Could be a plain filesystem path (e.g., /storage/emulated/0/...) or a web URL.
-                        // Try to detect a local file path first.
+                    } else if (imageUrl.startsWith("/storage") || imageUrl.startsWith("/data") || imageUrl.startsWith("/mnt")) {
+                        // Absolute file path
                         java.io.File f = new java.io.File(imageUrl);
                         if (f.exists()) {
-                            // Load from file (Glide can accept File)
                             com.bumptech.glide.Glide.with(ctx)
                                     .load(f)
                                     .placeholder(R.drawable.ic_food_placeholder)
                                     .error(R.drawable.ic_food_placeholder)
                                     .into(imageRecipe);
                         } else {
-                            // Fallback to treating as a URL (http/https)
+                            // Fallback to placeholder
+                            imageRecipe.setImageResource(R.drawable.ic_food_placeholder);
+                        }
+                    } else {
+                        // Try to parse as URI, fallback to placeholder
+                        try {
+                            android.net.Uri uri = android.net.Uri.parse(imageUrl);
                             com.bumptech.glide.Glide.with(ctx)
-                                    .load(imageUrl)
+                                    .load(uri)
                                     .placeholder(R.drawable.ic_food_placeholder)
                                     .error(R.drawable.ic_food_placeholder)
                                     .into(imageRecipe);
+                        } catch (Exception e) {
+                            imageRecipe.setImageResource(R.drawable.ic_food_placeholder);
                         }
                     }
                 } catch (Exception ex) {
-                    // Fallback to placeholder on any load error
                     android.util.Log.w("RecipeAdapter", "Failed to load image: " + imageUrl, ex);
                     imageRecipe.setImageResource(R.drawable.ic_food_placeholder);
                 }

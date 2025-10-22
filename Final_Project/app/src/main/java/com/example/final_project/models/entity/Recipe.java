@@ -3,7 +3,7 @@ package com.example.final_project.models.entity;
 import java.util.Date;
 import java.util.List;
 
-public class Recipe {
+public class Recipe implements java.io.Serializable {
     private String recipeId;
     private String name;
     private String instruction;
