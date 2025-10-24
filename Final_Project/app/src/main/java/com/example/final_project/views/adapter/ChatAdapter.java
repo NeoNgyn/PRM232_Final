@@ -345,8 +345,8 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                     String ingredients = extractSection(trimmedBlock, "@@nguyenlieu");
                     String instructions = extractSection(trimmedBlock, "@@congthuc");
                     String time = extractSection(trimmedBlock, "@@thoigian");
-
-                    final RecipeData recipeData = new RecipeData(title, ingredients, instructions, time);
+                    String nutrition = extractSection(trimmedBlock, "@@dinhduong"); // <-- Lấy dinh dưỡng
+                    final RecipeData recipeData = new RecipeData(title, ingredients, instructions, time,nutrition);
 
                     tvTitle.setText(recipeData.getTitle());
                     tvIngredients.setText(recipeData.getIngredients());

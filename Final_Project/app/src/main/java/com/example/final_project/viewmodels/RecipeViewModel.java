@@ -43,7 +43,7 @@ public class RecipeViewModel extends ViewModel {
                     newRecipeId,
                     recipeData.getTitle(),
                     recipeData.getInstructions(),
-                    null,
+                    recipeData.getNutrition(), // <-- Lấy nutrition từ RecipeData
                     null,
                     new Date(),
                     new Date()

@@ -314,7 +314,7 @@ public class ChatActivity extends AppCompatActivity implements ChatAdapter.OnRec
                                     "## [Số thứ tự]. [Tên món ăn]\n" +
                                     "@@nguyenlieu [Liệt kê nguyên liệu cần thêm]\n" +
                                     "@@congthuc [Liệt kê các bước công thức]\n" +
-                                    "@@thoigian [Ghi thời gian nấu]\n" +
+                                    "@@dinhduong [Ghi thông tin dinh dưỡng ước tính, ví dụ: Khoảng 450 calo, giàu protein]\n" + // <-- Dòng mới
                                     "---";
 
                     new GeminiApi().sendMessage(aiPrompt, new GeminiApi.Callback() {
@@ -391,7 +391,7 @@ public class ChatActivity extends AppCompatActivity implements ChatAdapter.OnRec
     @Override
     public void onSaveRecipeClicked(RecipeData recipe) {
         // Gửi yêu cầu lưu tới ViewModel
-        String userId = "2"; // Lấy userId từ session/login
+        String userId = "1"; // Lấy userId từ session/login
         recipeViewModel.saveRecipeToDatabase(recipe, userId);
 
         // Hiển thị thông báo phản hồi ngay lập tức cho người dùng
