@@ -6,6 +6,7 @@ import java.util.List;
 public class Menu {
     private String menuId;
     private String menuName;
+    private String imageUrl;
     private String description;
     private Date fromDate;
     private Date toDate;
@@ -17,10 +18,11 @@ public class Menu {
 
     public Menu() {}
 
-    public Menu(String menuId, String menuName, String description, Date fromDate, Date toDate,
-                Date createdAt, Date updatedAt) {
+    public Menu(String menuId, String menuName, String imageUrl, String description, Date fromDate, Date toDate,
+                Date createdAt, Date updatedAt ) {
         this.menuId = menuId;
         this.menuName = menuName;
+        this.imageUrl = imageUrl;
         this.description = description;
         this.fromDate = fromDate;
         this.toDate = toDate;
@@ -84,6 +86,14 @@ public class Menu {
 
     public void setUpdatedAt(Date updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 
     public List<RecipeInMenu> getRecipeList() {

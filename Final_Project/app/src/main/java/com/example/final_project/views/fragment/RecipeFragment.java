@@ -54,7 +54,7 @@ public class RecipeFragment extends Fragment {
             new Recipe("Bún Chả", "Bún chả Hà Nội với thịt nướng thơm ngon", "", "bun_cha", "bun_cha_2", null, null),
             new Recipe("Chè Đậu Xanh", "Chè đậu xanh mát lạnh", "", "che_dau_xanh", "che_dau_xanh_2", null, null)
         );
-        weeklyMenu.add(new Menu("Thứ Hai", "Thứ Hai", "Thứ Hai", null, null, null, null));
+
 
 
 

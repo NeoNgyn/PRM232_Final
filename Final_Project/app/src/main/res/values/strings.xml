@@ -49,4 +49,10 @@
     <string name="food_image">Food Image</string>
     <string name="food_quantity">Quantity: %d</string>
     <string name="food_expiry">Expiry: %s</string>
+    <string name="recipe_name_default">Tên món ăn</string>
+    <string name="recipe_desc_default">Mô tả ngắn về món ăn</string>
+    <string name="delete_recipe">Xóa recipe</string>
+    <string name="edit_recipe">Edit Recipe</string>
+    <string name="edit_recipe_header">Edit Recipe</string>
+    <string name="create_recipe_header">Create Recipe</string>
 </resources>
