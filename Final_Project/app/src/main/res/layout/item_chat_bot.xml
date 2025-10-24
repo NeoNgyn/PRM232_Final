@@ -4,9 +4,8 @@
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:padding="8dp"
-    android:gravity="start">
+    android:gravity="start|top">
 
-    <!-- Avatar bot -->
     <ImageView
         android:id="@+id/imgBotAvatar"
         android:layout_width="35dp"
@@ -18,14 +17,37 @@
         android:clipToOutline="true"
         android:outlineProvider="background" />
 
-    <!-- Tin nhắn bot -->
-    <TextView
-        android:id="@+id/tvMessageBot"
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@drawable/bg_bot_bubble"
+        android:orientation="vertical"
         android:padding="12dp"
-        android:textColor="#000000"
-        android:textSize="15sp"
-        android:maxWidth="250dp" />
+        android:maxWidth="300dp">
+
+        <ImageView
+            android:id="@+id/ivBotImage"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:scaleType="centerCrop"
+            android:visibility="gone"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            android:contentDescription="Ảnh do AI cung cấp" />
+
+        <TextView
+            android:id="@+id/tvBotIntro"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#000000"
+            android:textSize="15sp"
+            android:layout_marginBottom="8dp"/>
+
+        <LinearLayout
+            android:id="@+id/llRecipeContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </LinearLayout>
+
 </LinearLayout>

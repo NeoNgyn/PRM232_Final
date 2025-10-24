@@ -133,6 +133,7 @@ public class GeminiApi {
                 "Bạn là chuyên gia ẩm thực, chỉ trả lời về món ăn/nguyên liệu/công thức. " +
                         "Luôn trả lời ngắn gọn, có bước nấu. Nếu thiếu nguyên liệu, hãy gợi ý thay thế.";
 
+
         // build request JSON
         JsonArray contents = new JsonArray();
         JsonObject userPart = new JsonObject();
