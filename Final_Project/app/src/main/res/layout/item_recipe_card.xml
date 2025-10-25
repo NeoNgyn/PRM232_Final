@@ -3,8 +3,10 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:layout_marginTop="8dp"
+    android:layout_marginBottom="16dp"
     app:cardCornerRadius="12dp"
-    app:cardElevation="4dp"
+    app:cardElevation="6dp"
     app:cardUseCompatPadding="true"
     app:cardBackgroundColor="#FFFFFF">
 
@@ -14,6 +16,7 @@
         android:orientation="vertical"
         android:padding="16dp">
 
+        <!-- Tiêu đề món ăn -->
         <TextView
             android:id="@+id/tvRecipeTitle"
             android:layout_width="wrap_content"
@@ -23,6 +26,7 @@
             android:textSize="18sp"
             android:textStyle="bold" />
 
+        <!-- Nguyên liệu -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -47,6 +51,7 @@
                 android:textSize="15sp" />
         </LinearLayout>
 
+        <!-- Công thức -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -72,6 +77,7 @@
                 android:lineSpacingExtra="4dp"/>
         </LinearLayout>
 
+        <!-- Thời gian nấu -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -94,20 +100,23 @@
                 android:textSize="14sp"
                 android:layout_marginStart="8dp" />
         </LinearLayout>
+
+        <!-- Nút lưu món ăn -->
         <Button
             android:id="@+id/btnSaveRecipe"
             android:layout_width="wrap_content"
-            android:layout_height="40dp"
+            android:layout_height="wrap_content"
             android:layout_gravity="end"
             android:layout_marginTop="16dp"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="8dp"
             android:text="Lưu món ăn"
-            android:textSize="12sp"
+            android:textSize="14sp"
+            android:textAllCaps="false"
             android:backgroundTint="#FF9800"
             android:textColor="@android:color/white"
             android:drawableLeft="@android:drawable/ic_menu_save"
-            android:paddingLeft="12dp"
-            android:paddingRight="12dp"
-            android:textAllCaps="false"/>
+            android:drawablePadding="8dp" />
     </LinearLayout>
 
 </androidx.cardview.widget.CardView>

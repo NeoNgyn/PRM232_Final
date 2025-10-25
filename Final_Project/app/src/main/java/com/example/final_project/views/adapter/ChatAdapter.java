@@ -249,9 +249,166 @@
 //}
 
 
+//------------------------------
+//
+//// File: views/adapter/ChatAdapter.java
+//package com.example.final_project.views.adapter;
+//
+//import android.view.LayoutInflater;
+//import android.view.View;
+//import android.view.ViewGroup;
+//import android.widget.Button;
+//import android.widget.LinearLayout;
+//import android.widget.TextView;
+//import androidx.annotation.NonNull;
+//import androidx.recyclerview.widget.RecyclerView;
+//import com.example.final_project.R;
+//import com.example.final_project.models.entity.ChatMessage;
+//import com.example.final_project.models.entity.RecipeData;
+//
+//import java.util.List;
+//import java.util.regex.Matcher;
+//import java.util.regex.Pattern;
+//
+//public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+//
+//    public interface OnRecipeSaveListener {
+//        void onSaveRecipeClicked(RecipeData recipe);
+//    }
+//
+//    private final List<ChatMessage> chatMessages;
+//    private static final int VIEW_TYPE_USER = 1;
+//    private static final int VIEW_TYPE_BOT = 2;
+//    private final OnRecipeSaveListener saveListener;
+//
+//    public ChatAdapter(List<ChatMessage> chatMessages, OnRecipeSaveListener listener) {
+//        this.chatMessages = chatMessages;
+//        this.saveListener = listener;
+//    }
+//
+//    @Override
+//    public int getItemViewType(int position) {
+//        return chatMessages.get(position).isUser() ? VIEW_TYPE_USER : VIEW_TYPE_BOT;
+//    }
+//
+//    @NonNull
+//    @Override
+//    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+//        if (viewType == VIEW_TYPE_USER) {
+//            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_chat_user, parent, false);
+//            return new UserViewHolder(view);
+//        } else {
+//            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_chat_bot, parent, false);
+//            return new BotViewHolder(view);
+//        }
+//    }
+//
+//    @Override
+//    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+//        ChatMessage message = chatMessages.get(position);
+//        if (holder.getItemViewType() == VIEW_TYPE_USER) {
+//            ((UserViewHolder) holder).tvMessageUser.setText(message.getMessage());
+//        } else {
+//            BotViewHolder botHolder = (BotViewHolder) holder;
+//            String fullResponse = message.getMessage();
+//            String introText = "";
+//            String recipesText = fullResponse;
+//            int firstRecipeMarker = fullResponse.indexOf("## ");
+//
+//            if (firstRecipeMarker >= 0) {
+//                introText = firstRecipeMarker > 0 ? fullResponse.substring(0, firstRecipeMarker).trim() : "";
+//                recipesText = fullResponse.substring(firstRecipeMarker);
+//            } else {
+//                introText = fullResponse;
+//                recipesText = "";
+//            }
+//
+//            botHolder.tvBotIntro.setText(introText);
+//            botHolder.tvBotIntro.setVisibility(introText.isEmpty() ? View.GONE : View.VISIBLE);
+//            botHolder.llRecipeContainer.removeAllViews();
+//
+//            if (!recipesText.isEmpty()) {
+//                String[] recipes = recipesText.split("---");
+//                for (String recipeBlock : recipes) {
+//                    String trimmedBlock = recipeBlock.trim();
+//                    if (trimmedBlock.isEmpty()) continue;
+//
+//                    LayoutInflater inflater = LayoutInflater.from(botHolder.itemView.getContext());
+//                    View recipeCardView = inflater.inflate(R.layout.item_recipe_card, botHolder.llRecipeContainer, false);
+//                    TextView tvTitle = recipeCardView.findViewById(R.id.tvRecipeTitle);
+//                    TextView tvIngredients = recipeCardView.findViewById(R.id.tvRecipeIngredients);
+//                    TextView tvInstructions = recipeCardView.findViewById(R.id.tvRecipeInstructions);
+//                    TextView tvTime = recipeCardView.findViewById(R.id.tvRecipeTime);
+//                    Button btnSave = recipeCardView.findViewById(R.id.btnSaveRecipe);
+//
+//                    String title = extractSection(trimmedBlock, "##");
+//                    String ingredients = extractSection(trimmedBlock, "@@nguyenlieu");
+//                    String instructions = extractSection(trimmedBlock, "@@congthuc");
+//                    String time = extractSection(trimmedBlock, "@@thoigian");
+//                    String nutrition = extractSection(trimmedBlock, "@@dinhduong"); // <-- Lấy dinh dưỡng
+//                    final RecipeData recipeData = new RecipeData(title, ingredients, instructions, time,nutrition);
+//
+//                    tvTitle.setText(recipeData.getTitle());
+//                    tvIngredients.setText(recipeData.getIngredients());
+//                    tvInstructions.setText(recipeData.getInstructions());
+//                    tvTime.setText("Thời gian: " + recipeData.getTime());
+//
+//                    btnSave.setOnClickListener(v -> {
+//                        if (saveListener != null) {
+//                            saveListener.onSaveRecipeClicked(recipeData);
+//                            btnSave.setText("Đã lưu");
+//                            btnSave.setEnabled(false);
+//                        }
+//                    });
+//
+//                    botHolder.llRecipeContainer.addView(recipeCardView);
+//                }
+//            }
+//        }
+//    }
+//
+//    private String extractSection(String text, String marker) {
+//        try {
+//            Pattern pattern = Pattern.compile(Pattern.quote(marker) + "\\s(.*?)(?=\\n##|\\n@@|$)", Pattern.DOTALL);
+//            Matcher matcher = pattern.matcher(text);
+//            if (matcher.find()) {
+//                return matcher.group(1).trim();
+//            }
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//        return "Không có thông tin";
+//    }
+//
+//    @Override
+//    public int getItemCount() {
+//        return chatMessages.size();
+//    }
+//
+//    // ===== LỖI CỦA BẠN LÀ Ở ĐÂY: CÁC CLASS NÀY BỊ TRỐNG =====
+//    // Dưới đây là phiên bản đã được sửa lại đầy đủ.
+//
+//    static class UserViewHolder extends RecyclerView.ViewHolder {
+//        TextView tvMessageUser;
+//        UserViewHolder(@NonNull View itemView) {
+//            super(itemView);
+//            // Ánh xạ TextView cho tin nhắn của người dùng
+//            tvMessageUser = itemView.findViewById(R.id.tvMessageUser);
+//        }
+//    }
+//
+//    static class BotViewHolder extends RecyclerView.ViewHolder {
+//        TextView tvBotIntro;
+//        LinearLayout llRecipeContainer;
+//        BotViewHolder(@NonNull View itemView) {
+//            super(itemView);
+//            // Ánh xạ các view cho tin nhắn của bot
+//            tvBotIntro = itemView.findViewById(R.id.tvBotIntro);
+//            llRecipeContainer = itemView.findViewById(R.id.llRecipeContainer);
+//        }
+//    }
+//}
 
-
-// File: views/adapter/ChatAdapter.java
 package com.example.final_project.views.adapter;
 
 import android.view.LayoutInflater;
@@ -260,8 +417,10 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.example.final_project.R;
 import com.example.final_project.models.entity.ChatMessage;
 import com.example.final_project.models.entity.RecipeData;
@@ -295,10 +454,12 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         if (viewType == VIEW_TYPE_USER) {
-            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_chat_user, parent, false);
+            View view = LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.item_chat_user, parent, false);
             return new UserViewHolder(view);
         } else {
-            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_chat_bot, parent, false);
+            View view = LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.item_chat_bot, parent, false);
             return new BotViewHolder(view);
         }
     }
@@ -306,67 +467,88 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         ChatMessage message = chatMessages.get(position);
+
+        // ✅ Nếu là user → hiển thị tin nhắn người dùng
         if (holder.getItemViewType() == VIEW_TYPE_USER) {
             ((UserViewHolder) holder).tvMessageUser.setText(message.getMessage());
+            return;
+        }
+
+        // ✅ Nếu là bot → hiển thị công thức
+        BotViewHolder botHolder = (BotViewHolder) holder;
+        String fullResponse = message.getMessage();
+        String introText = "";
+        String recipesText = fullResponse;
+
+        // Cắt phần giới thiệu và phần công thức
+        int firstRecipeMarker = fullResponse.indexOf("## ");
+        if (firstRecipeMarker >= 0) {
+            introText = firstRecipeMarker > 0 ? fullResponse.substring(0, firstRecipeMarker).trim() : "";
+            recipesText = fullResponse.substring(firstRecipeMarker);
         } else {
-            BotViewHolder botHolder = (BotViewHolder) holder;
-            String fullResponse = message.getMessage();
-            String introText = "";
-            String recipesText = fullResponse;
-            int firstRecipeMarker = fullResponse.indexOf("## ");
+            introText = fullResponse;
+            recipesText = "";
+        }
 
-            if (firstRecipeMarker >= 0) {
-                introText = firstRecipeMarker > 0 ? fullResponse.substring(0, firstRecipeMarker).trim() : "";
-                recipesText = fullResponse.substring(firstRecipeMarker);
-            } else {
-                introText = fullResponse;
-                recipesText = "";
+        // Giới thiệu bot
+        botHolder.tvBotIntro.setText(introText);
+        botHolder.tvBotIntro.setVisibility(introText.isEmpty() ? View.GONE : View.VISIBLE);
+        botHolder.llRecipeContainer.removeAllViews();
+
+        // Thêm công thức
+        if (!recipesText.isEmpty()) {
+            String[] recipes = recipesText.split("---");
+
+            for (String recipeBlock : recipes) {
+                String trimmedBlock = recipeBlock.trim();
+                if (trimmedBlock.isEmpty()) continue;
+
+                LayoutInflater inflater = LayoutInflater.from(botHolder.itemView.getContext());
+                View recipeCardView = inflater.inflate(R.layout.item_recipe_card, botHolder.llRecipeContainer, false);
+
+                TextView tvTitle = recipeCardView.findViewById(R.id.tvRecipeTitle);
+                TextView tvIngredients = recipeCardView.findViewById(R.id.tvRecipeIngredients);
+                TextView tvInstructions = recipeCardView.findViewById(R.id.tvRecipeInstructions);
+                TextView tvTime = recipeCardView.findViewById(R.id.tvRecipeTime);
+                Button btnSave = recipeCardView.findViewById(R.id.btnSaveRecipe);
+
+                String title = extractSection(trimmedBlock, "##");
+                String ingredients = extractSection(trimmedBlock, "@@nguyenlieu");
+                String instructions = extractSection(trimmedBlock, "@@congthuc");
+                String time = extractSection(trimmedBlock, "@@thoigian");
+                String nutrition = extractSection(trimmedBlock, "@@dinhduong");
+
+                final RecipeData recipeData = new RecipeData(title, ingredients, instructions, time, nutrition);
+
+                tvTitle.setText(recipeData.getTitle());
+                tvIngredients.setText(recipeData.getIngredients());
+                tvInstructions.setText(recipeData.getInstructions());
+                tvTime.setText("⏱ " + recipeData.getTime());
+
+                btnSave.setOnClickListener(v -> {
+                    if (saveListener != null) {
+                        saveListener.onSaveRecipeClicked(recipeData);
+                        btnSave.setText("✅ Đã lưu");
+                        btnSave.setEnabled(false);
+                    }
+                });
+
+                botHolder.llRecipeContainer.addView(recipeCardView);
             }
+        }
 
-            botHolder.tvBotIntro.setText(introText);
-            botHolder.tvBotIntro.setVisibility(introText.isEmpty() ? View.GONE : View.VISIBLE);
-            botHolder.llRecipeContainer.removeAllViews();
-
-            if (!recipesText.isEmpty()) {
-                String[] recipes = recipesText.split("---");
-                for (String recipeBlock : recipes) {
-                    String trimmedBlock = recipeBlock.trim();
-                    if (trimmedBlock.isEmpty()) continue;
-
-                    LayoutInflater inflater = LayoutInflater.from(botHolder.itemView.getContext());
-                    View recipeCardView = inflater.inflate(R.layout.item_recipe_card, botHolder.llRecipeContainer, false);
-                    TextView tvTitle = recipeCardView.findViewById(R.id.tvRecipeTitle);
-                    TextView tvIngredients = recipeCardView.findViewById(R.id.tvRecipeIngredients);
-                    TextView tvInstructions = recipeCardView.findViewById(R.id.tvRecipeInstructions);
-                    TextView tvTime = recipeCardView.findViewById(R.id.tvRecipeTime);
-                    Button btnSave = recipeCardView.findViewById(R.id.btnSaveRecipe);
-
-                    String title = extractSection(trimmedBlock, "##");
-                    String ingredients = extractSection(trimmedBlock, "@@nguyenlieu");
-                    String instructions = extractSection(trimmedBlock, "@@congthuc");
-                    String time = extractSection(trimmedBlock, "@@thoigian");
-                    String nutrition = extractSection(trimmedBlock, "@@dinhduong"); // <-- Lấy dinh dưỡng
-                    final RecipeData recipeData = new RecipeData(title, ingredients, instructions, time,nutrition);
-
-                    tvTitle.setText(recipeData.getTitle());
-                    tvIngredients.setText(recipeData.getIngredients());
-                    tvInstructions.setText(recipeData.getInstructions());
-                    tvTime.setText("Thời gian: " + recipeData.getTime());
-
-                    btnSave.setOnClickListener(v -> {
-                        if (saveListener != null) {
-                            saveListener.onSaveRecipeClicked(recipeData);
-                            btnSave.setText("Đã lưu");
-                            btnSave.setEnabled(false);
-                        }
-                    });
-
-                    botHolder.llRecipeContainer.addView(recipeCardView);
-                }
-            }
+        // ✅ Thêm khoảng trống cho item cuối cùng để không bị che
+        if (position == chatMessages.size() - 1) {
+            int paddingBottomPx = (int) (botHolder.itemView.getContext().getResources().getDisplayMetrics().density * 80);
+            botHolder.itemView.setPadding(0, 0, 0, paddingBottomPx);
+        } else {
+            botHolder.itemView.setPadding(0, 0, 0, 0);
         }
     }
 
+    /**
+     * Hàm trích xuất nội dung giữa các marker
+     */
     private String extractSection(String text, String marker) {
         try {
             Pattern pattern = Pattern.compile(Pattern.quote(marker) + "\\s(.*?)(?=\\n##|\\n@@|$)", Pattern.DOTALL);
@@ -385,24 +567,21 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         return chatMessages.size();
     }
 
-    // ===== LỖI CỦA BẠN LÀ Ở ĐÂY: CÁC CLASS NÀY BỊ TRỐNG =====
-    // Dưới đây là phiên bản đã được sửa lại đầy đủ.
-
+    // --- ViewHolder người dùng ---
     static class UserViewHolder extends RecyclerView.ViewHolder {
         TextView tvMessageUser;
         UserViewHolder(@NonNull View itemView) {
             super(itemView);
-            // Ánh xạ TextView cho tin nhắn của người dùng
             tvMessageUser = itemView.findViewById(R.id.tvMessageUser);
         }
     }
 
+    // --- ViewHolder bot ---
     static class BotViewHolder extends RecyclerView.ViewHolder {
         TextView tvBotIntro;
         LinearLayout llRecipeContainer;
         BotViewHolder(@NonNull View itemView) {
             super(itemView);
-            // Ánh xạ các view cho tin nhắn của bot
             tvBotIntro = itemView.findViewById(R.id.tvBotIntro);
             llRecipeContainer = itemView.findViewById(R.id.llRecipeContainer);
         }
