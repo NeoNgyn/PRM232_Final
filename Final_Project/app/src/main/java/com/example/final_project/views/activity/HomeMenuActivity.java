@@ -19,6 +19,7 @@ import com.example.final_project.R;
 import com.example.final_project.models.entity.Recipe;
 import com.example.final_project.models.entity.RecipeInMenu;
 import com.example.final_project.utils.DatabaseConnection;
+import com.example.final_project.utils.UserSessionManager;
 import com.example.final_project.views.adapter.HomeMenuAdapter;
 import com.example.final_project.views.adapter.RecipeAdapter;
 import com.google.android.material.button.MaterialButton;
@@ -48,6 +49,10 @@ public class HomeMenuActivity extends AppCompatActivity {
     private List<HomeMenuAdapter.MenuItem> upcomingMenusList;
     private List<RecipeInMenu> recentRecipeList;
     private MaterialButton fabAddMenu;
+    private MaterialButton btnGoToFridge;
+    private MaterialButton btnMenuNav;
+    private MaterialButton btnFridgeNav;
+    private MaterialButton btnLogout;
 
     // Lưu padding-top gốc của header để không cộng dồn khi onResume
     private int headerOriginalPaddingTop = -1;
@@ -80,14 +85,25 @@ public class HomeMenuActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        // Bắt sự kiện click vào avatar để hiển thị menu đăng xuất
-        ImageView imgAvatar = findViewById(R.id.imgAvatar);
-        imgAvatar.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                showAvatarMenu(v);
-            }
+        // Initialize navigation buttons
+        btnGoToFridge = findViewById(R.id.btnGoToFridge);
+        btnMenuNav = findViewById(R.id.btnMenuNav);
+        btnFridgeNav = findViewById(R.id.btnFridgeNav);
+        btnLogout = findViewById(R.id.btnLogout);
+
+        // Go to Fridge button
+        btnGoToFridge.setOnClickListener(v -> navigateToFridge());
+
+        // Bottom navigation - Menu (already on menu page)
+        btnMenuNav.setOnClickListener(v -> {
+            Toast.makeText(this, "You are already on Menu page", Toast.LENGTH_SHORT).show();
         });
+
+        // Bottom navigation - Fridge
+        btnFridgeNav.setOnClickListener(v -> navigateToFridge());
+
+        // Logout button
+        btnLogout.setOnClickListener(v -> showLogoutConfirmDialog());
 
         setupTodayMenusRecyclerView();
         setupUpcomingMenusRecyclerView();
@@ -267,36 +283,54 @@ public class HomeMenuActivity extends AppCompatActivity {
             List<HomeMenuAdapter.MenuItem> loadedTodayList = new ArrayList<>();
             List<HomeMenuAdapter.MenuItem> loadedUpcomingList = new ArrayList<>();
             List<HomeMenuAdapter.MenuItem> loadedAllList = new ArrayList<>();
-            try (Connection conn = DatabaseConnection.getConnection()) {
-                if (conn == null) throw new SQLException("DB connection is null");
+            try {
+                // Check if user is logged in first
+                String currentUserId = UserSessionManager.getInstance(HomeMenuActivity.this).getCurrentUserId();
+                if (currentUserId == null || currentUserId.isEmpty()) {
+                    runOnUiThread(() -> {
+                        Toast.makeText(HomeMenuActivity.this, "User not logged in. Please login again.", Toast.LENGTH_LONG).show();
+                        Intent intent = new Intent(HomeMenuActivity.this, Login.class);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                        startActivity(intent);
+                        finish();
+                    });
+                    return;
+                }
 
-                java.sql.Date currentDate = new java.sql.Date(System.currentTimeMillis());
+                try (Connection conn = DatabaseConnection.getConnection()) {
+                    if (conn == null) throw new SQLException("DB connection is null");
 
-                String sql = "SELECT menu_id, menu_name, image_url, description, from_date, to_date FROM Menu ORDER BY create_at DESC";
-                try (PreparedStatement stmt = conn.prepareStatement(sql); ResultSet rs = stmt.executeQuery()) {
-                    while (rs.next()) {
-                        HomeMenuAdapter.MenuItem item = new HomeMenuAdapter.MenuItem(
-                                rs.getString("menu_id"),
-                                rs.getString("menu_name"),
-                                rs.getString("image_url"),
-                                rs.getString("description"),
-                                rs.getString("from_date"),
-                                rs.getString("to_date")
-                        );
+                    java.sql.Date currentDate = new java.sql.Date(System.currentTimeMillis());
 
-                        java.sql.Date fromDate = rs.getDate("from_date");
-                        java.sql.Date toDate = rs.getDate("to_date");
+                    String sql = "SELECT menu_id, menu_name, image_url, description, from_date, to_date FROM Menu WHERE user_id = ? ORDER BY create_at DESC";
+                    try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                        stmt.setString(1, currentUserId);
+                        try (ResultSet rs = stmt.executeQuery()) {
+                            while (rs.next()) {
+                                HomeMenuAdapter.MenuItem item = new HomeMenuAdapter.MenuItem(
+                                        rs.getString("menu_id"),
+                                        rs.getString("menu_name"),
+                                        rs.getString("image_url"),
+                                        rs.getString("description"),
+                                        rs.getString("from_date"),
+                                        rs.getString("to_date")
+                                );
 
-                        // Chỉ hiển thị menu nằm trong khoảng from_date - to_date
-                        if (fromDate != null && toDate != null &&
-                            !currentDate.before(fromDate) && !currentDate.after(toDate)) {
-                            loadedTodayList.add(item);
-                            loadedAllList.add(item); // Chỉ thêm vào danh sách tổng nếu hợp lệ
+                                java.sql.Date fromDate = rs.getDate("from_date");
+                                java.sql.Date toDate = rs.getDate("to_date");
+
+                                // Chỉ hiển thị menu nằm trong khoảng from_date - to_date
+                                if (fromDate != null && toDate != null &&
+                                    !currentDate.before(fromDate) && !currentDate.after(toDate)) {
+                                    loadedTodayList.add(item);
+                                    loadedAllList.add(item); // Chỉ thêm vào danh sách tổng nếu hợp lệ
+                                }
+                                else if (fromDate != null && fromDate.after(currentDate)) {
+                                    loadedUpcomingList.add(item);
+                                }
+                                // Nếu muốn hiển thị menu đã qua, có thể thêm else if (toDate != null && toDate.before(currentDate))
+                            }
                         }
-                        else if (fromDate != null && fromDate.after(currentDate)) {
-                            loadedUpcomingList.add(item);
-                        }
-                        // Nếu muốn hiển thị menu đã qua, có thể thêm else if (toDate != null && toDate.before(currentDate))
                     }
                 }
                 runOnUiThread(() -> {
@@ -411,40 +445,36 @@ public class HomeMenuActivity extends AppCompatActivity {
         });
     }
 
-    private void showAvatarMenu(View anchor) {
-        PopupMenu popup = new PopupMenu(this, anchor);
-        MenuInflater inflater = popup.getMenuInflater();
-        inflater.inflate(R.menu.menu_avatar, popup.getMenu());
-        popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-            @Override
-            public boolean onMenuItemClick(MenuItem item) {
-                if (item.getItemId() == R.id.action_logout) {
-                    showLogoutDialog();
-                    return true;
-                }
-                return false;
-            }
-        });
-        popup.show();
+    /**
+     * Navigate to FridgeInventoryActivity
+     */
+    private void navigateToFridge() {
+        Intent intent = new Intent(HomeMenuActivity.this, FridgeInventoryActivity.class);
+        startActivity(intent);
     }
 
-    private void showLogoutDialog() {
+    /**
+     * Show logout confirmation dialog
+     */
+    private void showLogoutConfirmDialog() {
         new AlertDialog.Builder(this)
                 .setTitle("Đăng xuất")
-                .setMessage("Bạn có muốn đăng xuất không?")
+                .setMessage("Bạn có chắc chắn muốn đăng xuất?")
                 .setPositiveButton("Đăng xuất", (dialog, which) -> performLogout())
-                .setNegativeButton("Hủy", (dialog, which) -> dialog.dismiss())
+                .setNegativeButton("Hủy", null)
                 .show();
     }
 
+    /**
+     * Perform logout: clear session and navigate to Login
+     */
     private void performLogout() {
-        // Xóa thông tin đăng nhập (ví dụ SharedPreferences)
-        SharedPreferences prefs = getSharedPreferences("user_prefs", MODE_PRIVATE);
-        prefs.edit().clear().apply();
-        // Nếu dùng FirebaseAuth thì thêm: FirebaseAuth.getInstance().signOut();
-        // Chuyển về màn hình đăng nhập và clear backstack
-        Intent intent = new Intent(this, Login.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        // Clear user session
+        UserSessionManager.getInstance(this).clearUserSession();
+
+        // Navigate to Login activity
+        Intent intent = new Intent(HomeMenuActivity.this, Login.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();
     }

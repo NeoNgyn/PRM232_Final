@@ -47,12 +47,19 @@
                 android:textStyle="bold"
                 android:textColor="#333" />
 
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/ic_fridge"
-                android:contentDescription="Fridge icon"
-                android:layout_marginEnd="12dp" />
+                <!-- Go to Fridge Button -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnGoToFridge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:text="🍒 Tủ lạnh"
+                    android:textSize="12sp"
+                    android:textColor="@android:color/white"
+                    android:paddingHorizontal="12dp"
+                    android:layout_marginEnd="8dp"
+                    app:backgroundTint="#4CAF50"
+                    app:cornerRadius="20dp"
+                    style="@style/Widget.MaterialComponents.Button" />
 
             <!-- Create Menu Button -->
             <com.google.android.material.button.MaterialButton
@@ -260,7 +267,61 @@
 
             </LinearLayout>
 
+        <!-- Bottom Navigation Bar -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:background="@android:color/white"
+            android:elevation="8dp"
+            android:padding="12dp"
+            android:gravity="center"
+            android:layout_marginTop="24dp">
+
+            <!-- Menu Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnMenuNav"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:text="🍽️ Menu"
+                android:textSize="12sp"
+                android:textColor="@android:color/white"
+                android:layout_marginEnd="8dp"
+                app:backgroundTint="#2196F3"
+                app:cornerRadius="8dp"
+                style="@style/Widget.MaterialComponents.Button" />
+
+            <!-- Fridge Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnFridgeNav"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:text="🍒 Tủ Lạnh"
+                android:textSize="12sp"
+                android:textColor="@android:color/white"
+                android:layout_marginEnd="8dp"
+                app:backgroundTint="#4CAF50"
+                app:cornerRadius="8dp"
+                style="@style/Widget.MaterialComponents.Button" />
+
+            <!-- Logout Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnLogout"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:text="🚪 Đăng xuất"
+                android:textSize="12sp"
+                android:textColor="@android:color/white"
+                app:backgroundTint="#F44336"
+                app:cornerRadius="8dp"
+                style="@style/Widget.MaterialComponents.Button" />
+
         </LinearLayout>
+
+    </LinearLayout>
 
     </androidx.core.widget.NestedScrollView>
 
