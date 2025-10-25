@@ -6,20 +6,44 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.final_project.R;
+import com.example.final_project.BuildConfig;
 import com.example.final_project.models.entity.Recipe;
+import com.example.final_project.utils.DatabaseConnection;
+
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+import org.json.JSONObject;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 public class CreateRecipeActivity extends AppCompatActivity {
 
@@ -30,13 +54,66 @@ public class CreateRecipeActivity extends AppCompatActivity {
     private Button btnChooseImage, btnSaveRecipe;
     private Uri imageUri;
     private final ExecutorService dbExecutor = Executors.newSingleThreadExecutor();
+    // executor dedicated for uploads
+    private final ExecutorService uploadExecutor = Executors.newSingleThreadExecutor();
     private String menuId;
     private Recipe editingRecipe = null;
+
+    // --- New fields for ingredient handling ---
+    private Spinner spFoodItem;
+    private Spinner spUnit;
+    private EditText etIngredientAmount;
+    private Button btnAddIngredient;
+    private LinearLayout llIngredientsContainer;
+
+    // Local caches
+    private final List<String> foodItemIds = new ArrayList<>();
+    private final List<String> foodItemNames = new ArrayList<>();
+    private final List<Integer> foodItemUnitIds = new ArrayList<>(); // Store unit_id for each food item
+    private final List<String> foodItemUnitNames = new ArrayList<>(); // Store unit_name for each food item
+    private final List<Integer> unitIds = new ArrayList<>();
+    private final List<String> unitNames = new ArrayList<>();
+
+    // In-memory ingredient representation
+    private static class IngredientEntry {
+        String foodId;
+        String foodName;
+        String amount; // keep as string for easy DB insert (can hold decimals)
+        Integer unitId; // may be null
+        String unitName;
+
+        IngredientEntry(String foodId, String foodName, String amount, Integer unitId, String unitName) {
+            this.foodId = foodId;
+            this.foodName = foodName;
+            this.amount = amount;
+            this.unitId = unitId;
+            this.unitName = unitName;
+        }
+    }
+
+    private final List<IngredientEntry> ingredientsList = new ArrayList<>();
+
+    // Lưu padding-top gốc của header để không cộng dồn khi onResume
+    private int headerOriginalPaddingTop = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_recipe);
+
+        // Cố định header: lấy view headerContainer (đã thêm trong layout) và đảm bảo nó luôn ở trên cùng
+        View header = findViewById(R.id.headerContainer);
+        if (header != null) {
+            if (headerOriginalPaddingTop == -1) {
+                headerOriginalPaddingTop = header.getPaddingTop();
+            }
+            int statusBarHeight = getStatusBarHeight();
+            header.setPadding(header.getPaddingLeft(), headerOriginalPaddingTop + statusBarHeight, header.getPaddingRight(), header.getPaddingBottom());
+            header.bringToFront();
+            header.requestLayout();
+            header.invalidate();
+        }
+
         android.widget.ImageButton btnBack = findViewById(R.id.btnBack);
         btnBack.setOnClickListener(v -> finish());
         etRecipeName = findViewById(R.id.etRecipeName);
@@ -45,6 +122,13 @@ public class CreateRecipeActivity extends AppCompatActivity {
         imageRecipePreview = findViewById(R.id.imageRecipePreview);
         btnChooseImage = findViewById(R.id.btnChooseImage);
         btnSaveRecipe = findViewById(R.id.btnSaveRecipe);
+
+        // Ingredient UI refs
+        spFoodItem = findViewById(R.id.spFoodItem);
+        spUnit = findViewById(R.id.spUnit);
+        etIngredientAmount = findViewById(R.id.etIngredientAmount);
+        btnAddIngredient = findViewById(R.id.btnAddIngredient);
+        llIngredientsContainer = findViewById(R.id.llIngredientsContainer);
 
         // Đổi header thành Edit nếu là chỉnh sửa
         android.widget.TextView tvHeader = findViewById(R.id.tvHeader);
@@ -67,11 +151,213 @@ public class CreateRecipeActivity extends AppCompatActivity {
             } else {
                 imageRecipePreview.setImageResource(R.drawable.ic_food_placeholder);
             }
+
+            // If editing, load existing ingredients for this recipe into in-memory list then show
+            loadIngredientsForEditing(editingRecipe.getRecipeId());
         } else {
             if (tvHeader != null) tvHeader.setText(R.string.create_recipe_header);
         }
+
         btnChooseImage.setOnClickListener(v -> openImagePicker());
         btnSaveRecipe.setOnClickListener(v -> saveRecipe());
+
+        // Load units and food items from DB
+        loadUnitsAndFoodItems();
+
+        btnAddIngredient.setOnClickListener(v -> onAddIngredientClicked());
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Ensure header remains on top after resume
+        View header = findViewById(R.id.headerContainer);
+        if (header != null) {
+            if (headerOriginalPaddingTop == -1) {
+                headerOriginalPaddingTop = header.getPaddingTop();
+            }
+            int statusBarHeight = getStatusBarHeight();
+            header.setPadding(header.getPaddingLeft(), headerOriginalPaddingTop + statusBarHeight, header.getPaddingRight(), header.getPaddingBottom());
+            header.bringToFront();
+            header.requestLayout();
+            header.invalidate();
+        }
+    }
+
+    // Trợ giúp lấy chiều cao status bar
+    private int getStatusBarHeight() {
+        int result = 0;
+        int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            result = getResources().getDimensionPixelSize(resourceId);
+        }
+        return result;
+    }
+
+    // Load existing ingredient rows when editing a recipe (if editingRecipe != null)
+    private void loadIngredientsForEditing(String recipeId) {
+        if (recipeId == null) return;
+        dbExecutor.execute(() -> {
+            try (Connection conn = DatabaseConnection.getConnection()) {
+                if (conn == null) return;
+                // Fixed: Get unit_id from FoodItem table, not from Ingredient table
+                String sql = "SELECT i.amount, i.food_id, fi.food_name, fi.unit_id, u.unit_name " +
+                        "FROM Ingredient i " +
+                        "LEFT JOIN FoodItem fi ON i.food_id = fi.food_id " +
+                        "LEFT JOIN Unit u ON fi.unit_id = u.unit_id " +
+                        "WHERE i.recipe_id = ?";
+                try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                    stmt.setString(1, recipeId);
+                    try (ResultSet rs = stmt.executeQuery()) {
+                        while (rs.next()) {
+                            String amount = rs.getString("amount");
+                            String foodId = rs.getString("food_id");
+                            String foodName = rs.getString("food_name");
+                            int unitId = rs.getInt("unit_id");
+                            String unitName = rs.getString("unit_name");
+                            IngredientEntry e = new IngredientEntry(foodId, foodName != null ? foodName : foodId, amount, unitId == 0 ? null : unitId, unitName);
+                            ingredientsList.add(e);
+                        }
+                    }
+                }
+                runOnUiThread(this::refreshIngredientsUI);
+            } catch (Exception e) {
+                android.util.Log.e("CreateRecipeActivity", "Error loading ingredients for edit", e);
+            }
+        });
+    }
+
+    private void onAddIngredientClicked() {
+        int foodPos = spFoodItem.getSelectedItemPosition();
+        String amount = etIngredientAmount.getText().toString().trim();
+        if (foodPos < 0 || foodPos >= foodItemIds.size()) {
+            Toast.makeText(this, "Please select a food item", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (amount.isEmpty()) {
+            Toast.makeText(this, "Please enter amount", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Get food item details
+        String foodId = foodItemIds.get(foodPos);
+        String foodName = foodItemNames.get(foodPos);
+
+        // Get unit from the FoodItem itself, not from separate spinner
+        Integer unitId = foodPos < foodItemUnitIds.size() ? foodItemUnitIds.get(foodPos) : null;
+        String unitName = foodPos < foodItemUnitNames.size() ? foodItemUnitNames.get(foodPos) : "";
+
+        IngredientEntry entry = new IngredientEntry(foodId, foodName, amount, unitId, unitName);
+        ingredientsList.add(entry);
+        etIngredientAmount.setText("");
+        refreshIngredientsUI();
+
+        android.util.Log.d("CreateRecipeActivity", "Added ingredient: " + amount + " " + unitName + " " + foodName);
+    }
+
+    private void refreshIngredientsUI() {
+        llIngredientsContainer.removeAllViews();
+        for (int i = 0; i < ingredientsList.size(); i++) {
+            final int idx = i;
+            IngredientEntry it = ingredientsList.get(i);
+            LinearLayout row = new LinearLayout(this);
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            row.setPadding(6,6,6,6);
+
+            TextView tv = new TextView(this);
+            String text = it.amount + (it.unitName != null && !it.unitName.isEmpty() ? " " + it.unitName : "") + " " + it.foodName;
+            tv.setText(text);
+            tv.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
+            Button btnRemove = new Button(this);
+            btnRemove.setText("Remove");
+            btnRemove.setOnClickListener(v -> {
+                ingredientsList.remove(idx);
+                refreshIngredientsUI();
+            });
+
+            row.addView(tv);
+            row.addView(btnRemove);
+            llIngredientsContainer.addView(row);
+        }
+    }
+
+    private void loadUnitsAndFoodItems() {
+        // Load in background then populate spinners on UI thread
+        dbExecutor.execute(() -> {
+            // Note: we don't have a session/user object in this codebase. We'll assume a sample user id "U001".
+            // If your app stores logged-in user elsewhere, replace this accordingly.
+            String userId = "U001";
+            try (Connection conn = DatabaseConnection.getConnection()) {
+                if (conn == null) return;
+
+                // Load units
+                String sqlUnits = "SELECT unit_id, unit_name FROM Unit ORDER BY unit_id";
+                try (PreparedStatement stmt = conn.prepareStatement(sqlUnits); ResultSet rs = stmt.executeQuery()) {
+                    unitIds.clear();
+                    unitNames.clear();
+                    while (rs.next()) {
+                        unitIds.add(rs.getInt("unit_id"));
+                        unitNames.add(rs.getString("unit_name"));
+                    }
+                }
+
+                // Load food items WITH their unit_id and unit_name for the user
+                String sqlFoods = "SELECT fi.food_id, fi.food_name, fi.unit_id, u.unit_name " +
+                        "FROM FoodItem fi " +
+                        "LEFT JOIN Unit u ON fi.unit_id = u.unit_id " +
+                        "WHERE fi.user_id = ?";
+                try (PreparedStatement stmt = conn.prepareStatement(sqlFoods)) {
+                    stmt.setString(1, userId);
+                    try (ResultSet rs = stmt.executeQuery()) {
+                        foodItemIds.clear();
+                        foodItemNames.clear();
+                        foodItemUnitIds.clear();
+                        foodItemUnitNames.clear();
+                        while (rs.next()) {
+                            foodItemIds.add(rs.getString("food_id"));
+                            foodItemNames.add(rs.getString("food_name"));
+                            int unitId = rs.getInt("unit_id");
+                            String unitName = rs.getString("unit_name");
+                            foodItemUnitIds.add(unitId == 0 ? null : unitId);
+                            foodItemUnitNames.add(unitName != null ? unitName : "");
+                        }
+                    }
+                }
+
+                runOnUiThread(() -> {
+                    // Populate unit spinner (for reference only)
+                    ArrayAdapter<String> unitAdapter = new ArrayAdapter<>(CreateRecipeActivity.this, android.R.layout.simple_spinner_item, unitNames);
+                    unitAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                    spUnit.setAdapter(unitAdapter);
+
+                    // Populate food item spinner with "food_name (unit_name)" format for clarity
+                    List<String> foodDisplayNames = new ArrayList<>();
+                    for (int i = 0; i < foodItemNames.size(); i++) {
+                        String foodName = foodItemNames.get(i);
+                        String unitName = i < foodItemUnitNames.size() ? foodItemUnitNames.get(i) : "";
+                        if (unitName != null && !unitName.isEmpty()) {
+                            foodDisplayNames.add(foodName + " (" + unitName + ")");
+                        } else {
+                            foodDisplayNames.add(foodName);
+                        }
+                    }
+                    ArrayAdapter<String> foodAdapter = new ArrayAdapter<>(CreateRecipeActivity.this, android.R.layout.simple_spinner_item, foodDisplayNames);
+                    foodAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                    spFoodItem.setAdapter(foodAdapter);
+
+                    // Hide or disable the unit spinner since unit is determined by food item
+                    spUnit.setEnabled(false);
+                    spUnit.setVisibility(android.view.View.GONE);
+
+                    // If editing and there are existing ingredients, keep them shown (they were loaded earlier)
+                    refreshIngredientsUI();
+                });
+
+            } catch (Exception e) {
+                android.util.Log.e("CreateRecipeActivity", "Error loading units/food items", e);
+            }
+        });
     }
 
     private void openImagePicker() {
@@ -130,11 +416,68 @@ public class CreateRecipeActivity extends AppCompatActivity {
         }
     }
 
+    // Helper: copy a content Uri to a temporary file in cache and return the File
+    private File uriToTempFile(Uri uri) {
+        if (uri == null) return null;
+        try (InputStream in = getContentResolver().openInputStream(uri)) {
+            if (in == null) return null;
+            File temp = File.createTempFile("upload_", ".jpg", getCacheDir());
+            try (OutputStream out = new FileOutputStream(temp)) {
+                byte[] buf = new byte[8192];
+                int len;
+                while ((len = in.read(buf)) > 0) {
+                    out.write(buf, 0, len);
+                }
+            }
+            return temp;
+        } catch (Exception e) {
+            android.util.Log.e("CreateRecipeActivity", "Failed to copy uri to temp file", e);
+            return null;
+        }
+    }
+
+    // Upload file to Cloudinary using unsigned upload preset configured in build config.
+    // Returns secure_url (https) on success or null on failure.
+    private String uploadFileToCloudinary(File file) {
+        if (file == null || !file.exists()) return null;
+        final String cloudName = BuildConfig.CLOUDINARY_CLOUD_NAME != null ? BuildConfig.CLOUDINARY_CLOUD_NAME : "";
+        final String uploadPreset = BuildConfig.CLOUDINARY_UPLOAD_PRESET != null ? BuildConfig.CLOUDINARY_UPLOAD_PRESET : "";
+        if (cloudName.isEmpty() || uploadPreset.isEmpty()) {
+            android.util.Log.e("CreateRecipeActivity", "Cloudinary configuration missing in BuildConfig");
+            return null;
+        }
+        String url = "https://api.cloudinary.com/v1_1/" + cloudName + "/image/upload";
+        OkHttpClient client = new OkHttpClient();
+        MediaType mediaType = MediaType.parse("image/*");
+        RequestBody fileBody = RequestBody.create(file, mediaType);
+        MultipartBody requestBody = new MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("file", file.getName(), fileBody)
+                .addFormDataPart("upload_preset", uploadPreset)
+                .build();
+        Request request = new Request.Builder()
+                .url(url)
+                .post(requestBody)
+                .build();
+        try (Response response = client.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                android.util.Log.e("CreateRecipeActivity", "Cloudinary upload failed: " + response.code() + " " + response.message());
+                return null;
+            }
+            String body = response.body() != null ? response.body().string() : null;
+            if (body == null) return null;
+            JSONObject json = new JSONObject(body);
+            return json.optString("secure_url", null);
+        } catch (Exception e) {
+            android.util.Log.e("CreateRecipeActivity", "Exception uploading to Cloudinary", e);
+            return null;
+        }
+    }
+
     private void saveRecipe() {
         String name = etRecipeName.getText().toString().trim();
         String instruction = etRecipeInstruction.getText().toString().trim();
         String nutrition = etRecipeNutrition.getText().toString().trim();
-        String imageUrl = (imageUri != null) ? imageUri.toString() : (editingRecipe != null ? editingRecipe.getImageUrl() : null);
         if (name.isEmpty() || instruction.isEmpty()) {
             Toast.makeText(this, "Please fill all required fields", Toast.LENGTH_SHORT).show();
             return;
@@ -146,6 +489,43 @@ public class CreateRecipeActivity extends AppCompatActivity {
             return;
         }
 
+        // Determine whether we need to upload the selected image to Cloudinary.
+        final String currentImageString = (imageUri != null) ? imageUri.toString() : (editingRecipe != null ? editingRecipe.getImageUrl() : null);
+        boolean needsUpload = false;
+        if (imageUri != null) {
+            String s = imageUri.toString();
+            if (!(s.startsWith("http://") || s.startsWith("https://"))) {
+                // Local content/file Uris need upload
+                needsUpload = true;
+            }
+        }
+
+        if (needsUpload) {
+            // Upload in background then save to DB
+            Toast.makeText(this, "Uploading image...", Toast.LENGTH_SHORT).show();
+            final Uri toUpload = imageUri;
+            uploadExecutor.execute(() -> {
+                File temp = uriToTempFile(toUpload);
+                String uploadedUrl = uploadFileToCloudinary(temp);
+                if (temp != null && temp.exists()) {
+                    // Best-effort delete temp file
+                    try { temp.delete(); } catch (Exception ignore) {}
+                }
+                if (uploadedUrl == null) {
+                    runOnUiThread(() -> Toast.makeText(CreateRecipeActivity.this, "Image upload failed. Recipe not saved.", Toast.LENGTH_LONG).show());
+                    return;
+                }
+                // proceed to save with uploadedUrl
+                performDatabaseSave(name, instruction, nutrition, uploadedUrl);
+            });
+        } else {
+            // No upload required (either no image selected or image is already a web URL)
+            performDatabaseSave(name, instruction, nutrition, currentImageString);
+        }
+    }
+
+    // Perform DB insert/update on dbExecutor. imageUrl may be null or empty string.
+    private void performDatabaseSave(String name, String instruction, String nutrition, String imageUrl) {
         dbExecutor.execute(() -> {
             try (Connection conn = com.example.final_project.utils.DatabaseConnection.getConnection()) {
                 if (conn == null) {
@@ -164,9 +544,19 @@ public class CreateRecipeActivity extends AppCompatActivity {
                         int rowsAffected = stmt.executeUpdate();
                         android.util.Log.d("CreateRecipeActivity", "Updated recipe " + editingRecipe.getRecipeId() + ", rows affected: " + rowsAffected);
                     }
+
+                    // Replace existing ingredients for this recipe: delete then insert current list
+                    try (PreparedStatement del = conn.prepareStatement("DELETE FROM Ingredient WHERE recipe_id = ?")) {
+                        del.setString(1, editingRecipe.getRecipeId());
+                        del.executeUpdate();
+                    }
+                    insertIngredientsForRecipe(conn, editingRecipe.getRecipeId());
+
                     runOnUiThread(() -> {
                         Toast.makeText(this, "Recipe updated!", Toast.LENGTH_SHORT).show();
-                        setResult(Activity.RESULT_OK);
+                        Intent res = new Intent();
+                        res.putExtra("ingredients_updated", true);
+                        setResult(Activity.RESULT_OK, res);
                         finish();
                     });
                 } else {
@@ -209,7 +599,7 @@ public class CreateRecipeActivity extends AppCompatActivity {
                         stmt.setString(5, imageUrl != null ? imageUrl : "");
                         stmt.executeUpdate();
                     }
-                    // Insert vào RecipeInMenu
+                    // Insert vào RecipeInMenu - Fixed: use recipeMenu_id (with underscore) not recipeMenuId
                     String sqlRecipeInMenu = "INSERT INTO RecipeInMenu (recipeMenu_id, recipe_id, menu_id) VALUES (?, ?, ?)";
                     try (PreparedStatement stmt = conn.prepareStatement(sqlRecipeInMenu)) {
                         stmt.setString(1, recipeMenuId);
@@ -217,9 +607,15 @@ public class CreateRecipeActivity extends AppCompatActivity {
                         stmt.setString(3, menuId);
                         stmt.executeUpdate();
                     }
+
+                    // Insert ingredients for the new recipe
+                    insertIngredientsForRecipe(conn, recipeId);
+
                     runOnUiThread(() -> {
                         Toast.makeText(this, "Recipe '" + name + "' created and added to menu!", Toast.LENGTH_SHORT).show();
-                        setResult(Activity.RESULT_OK);
+                        Intent res = new Intent();
+                        res.putExtra("ingredients_updated", true);
+                        setResult(Activity.RESULT_OK, res);
                         finish();
                     });
                 }
@@ -228,6 +624,52 @@ public class CreateRecipeActivity extends AppCompatActivity {
                 runOnUiThread(() -> Toast.makeText(this, "Error saving recipe!", Toast.LENGTH_SHORT).show());
             }
         });
+    }
+
+    /**
+     * Insert ingredient rows for a given recipe_id using the current in-memory ingredientsList.
+     * According to the database schema, Ingredient table has: ingredient_id, amount, recipe_id, food_id
+     * (unit_id is stored in FoodItem table, not in Ingredient table)
+     */
+    private void insertIngredientsForRecipe(Connection conn, String recipeId) {
+        if (ingredientsList.isEmpty()) {
+            android.util.Log.w("CreateRecipeActivity", "ingredientsList is empty, no ingredients to insert");
+            return;
+        }
+        android.util.Log.d("CreateRecipeActivity", "Inserting " + ingredientsList.size() + " ingredients for recipe: " + recipeId);
+        try {
+            // Find current max numeric suffix for ingredient_id
+            String nextIdPrefix = "I"; // I001 etc
+            int nextNum = 1;
+            try (PreparedStatement stmtMax = conn.prepareStatement("SELECT MAX(CAST(SUBSTRING(ingredient_id,2) AS UNSIGNED)) AS maxnum FROM Ingredient WHERE ingredient_id REGEXP '^I[0-9]+'")) {
+                try (ResultSet rs = stmtMax.executeQuery()) {
+                    int max = 0;
+                    if (rs.next()) {
+                        max = rs.getInt("maxnum");
+                        if (rs.wasNull()) max = 0;
+                    }
+                    nextNum = max + 1;
+                }
+            }
+
+            // Fixed: Ingredient table only has ingredient_id, amount, recipe_id, food_id (no unit_id)
+            String sqlInsert = "INSERT INTO Ingredient (ingredient_id, amount, recipe_id, food_id) VALUES (?, ?, ?, ?)";
+            try (PreparedStatement ins = conn.prepareStatement(sqlInsert)) {
+                for (IngredientEntry ie : ingredientsList) {
+                    String ingredientId = String.format(Locale.US, "%s%03d", nextIdPrefix, nextNum);
+                    ins.setString(1, ingredientId);
+                    ins.setString(2, ie.amount != null ? ie.amount : "");
+                    ins.setString(3, recipeId);
+                    ins.setString(4, ie.foodId);
+                    ins.executeUpdate();
+                    android.util.Log.d("CreateRecipeActivity", "Inserted ingredient: " + ingredientId + " - " + ie.amount + " " + ie.foodName);
+                    nextNum++;
+                }
+            }
+            android.util.Log.d("CreateRecipeActivity", "Successfully inserted all ingredients");
+        } catch (Exception e) {
+            android.util.Log.e("CreateRecipeActivity", "Error inserting ingredients", e);
+        }
     }
 
     @Override
