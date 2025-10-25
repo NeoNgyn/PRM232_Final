@@ -39,6 +39,8 @@
                 android:layout_height="52dp"
                 android:background="@drawable/bg_edittext_default"
                 android:layout_marginBottom="12dp"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
                 android:textSize="16sp"/>
 
             <LinearLayout
@@ -56,6 +58,8 @@
                     android:layout_weight="1"
                     android:background="@drawable/bg_edittext_default"
                     android:layout_marginEnd="8dp"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
                     android:textSize="16sp"/>
 
                 <EditText
@@ -65,6 +69,8 @@
                     android:layout_height="52dp"
                     android:layout_weight="1"
                     android:background="@drawable/bg_edittext_default"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
                     android:textSize="16sp"/>
             </LinearLayout>
 
@@ -75,6 +81,8 @@
                 android:layout_height="52dp"
                 android:background="@drawable/bg_edittext_default"
                 android:layout_marginBottom="12dp"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
                 android:textSize="16sp"/>
 
             <EditText
@@ -84,6 +92,10 @@
                 android:layout_height="80dp"
                 android:background="@drawable/bg_edittext_default"
                 android:gravity="top"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingTop="12dp"
+                android:paddingBottom="12dp"
                 android:textSize="16sp"/>
 
             <!-- Image picker -->
