@@ -4,7 +4,6 @@ import android.graphics.Bitmap;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
@@ -12,6 +11,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.final_project.R;
 import com.example.final_project.models.entity.Recipe;
 import com.example.final_project.models.entity.RecipeInMenu;
+import com.google.android.material.button.MaterialButton;
 
 import java.io.InputStream;
 import java.util.List;
@@ -23,6 +23,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
 
     public interface OnRecipeActionListener {
         void onDeleteRecipe(RecipeInMenu recipeInMenu, int position);
+        void onEditRecipe(RecipeInMenu recipeInMenu, int position);
     }
 
     // Accept an optional action listener
@@ -57,7 +58,25 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
             holder.btnDelete.setOnClickListener(v -> {
                 int pos = holder.getAdapterPosition();
                 if (pos != RecyclerView.NO_POSITION) {
-                    actionListener.onDeleteRecipe(recipeInMenu, pos);
+                    if (actionListener != null) {
+                        actionListener.onDeleteRecipe(recipeInMenu, pos);
+                    }
+                }
+            });
+            holder.btnEdit.setOnClickListener(v -> {
+                int pos = holder.getAdapterPosition();
+                if (pos != RecyclerView.NO_POSITION) {
+                    if (actionListener != null) {
+                        actionListener.onEditRecipe(recipeInMenu, pos);
+                    } else if (recipeInMenu.getRecipe() != null) {
+                        android.content.Context ctx = holder.itemView.getContext();
+                        android.content.Intent intent = new android.content.Intent(ctx, com.example.final_project.views.activity.CreateRecipeActivity.class);
+                        intent.putExtra("recipe", (java.io.Serializable) recipeInMenu.getRecipe());
+                        if (recipeInMenu.getMenu() != null && recipeInMenu.getMenu().getMenuId() != null) {
+                            intent.putExtra("menu_id", recipeInMenu.getMenu().getMenuId());
+                        }
+                        ctx.startActivity(intent);
+                    }
                 }
             });
         } else {
@@ -80,7 +99,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
             int pos = holder.getBindingAdapterPosition();
             if (pos != RecyclerView.NO_POSITION && recipeInMenu.getRecipe() != null) {
                 android.content.Context ctx = holder.itemView.getContext();
-                android.content.Intent intent = new android.content.Intent(ctx, com.example.final_project.views.activity.RecipeDetailActivity.class);
+                android.content.Intent intent = new android.content.Intent(ctx, com.example.final_project.views.activity.MealDetailActivity.class);
                 intent.putExtra("recipe", (java.io.Serializable) recipeInMenu.getRecipe());
                 ctx.startActivity(intent);
             }
@@ -98,8 +117,8 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         private ImageView imageRecipe;
         private TextView textRecipeName;
         private TextView textRecipeDescription;
-        ImageButton btnDelete;
-        ImageButton btnEdit;
+        MaterialButton btnDelete;
+        MaterialButton btnEdit;
 
         public RecipeViewHolder(@NonNull View itemView) {
             super(itemView);
