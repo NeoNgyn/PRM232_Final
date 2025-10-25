@@ -26,6 +26,7 @@ import com.example.final_project.models.entity.FoodItem;
 import com.example.final_project.views.adapter.InventoryAdapter;
 import com.example.final_project.utils.CloudinaryHelper;
 import com.example.final_project.utils.DatabaseConnection;
+import com.example.final_project.utils.UserSessionManager;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -51,6 +52,9 @@ public class FridgeInventoryActivity extends AppCompatActivity implements Invent
     private TextView tvTitle;
     private TextView tvTotalFood, tvNearExpiry;
     private Button btnFilterAll, btnFilterNearExpiry;
+    private com.google.android.material.button.MaterialButton btnMenuNav;
+    private com.google.android.material.button.MaterialButton btnFridgeNav;
+    private com.google.android.material.button.MaterialButton btnLogout;
 
     private InventoryAdapter inventoryAdapter;
     private List<FoodItem> foodList;
@@ -72,6 +76,7 @@ public class FridgeInventoryActivity extends AppCompatActivity implements Invent
         setupRecyclerView();
         loadFromDatabase();
         setupListeners();
+        setupNavigationButtons();
     }
 
     private void initViews() {
@@ -82,6 +87,9 @@ public class FridgeInventoryActivity extends AppCompatActivity implements Invent
         tvTitle = findViewById(R.id.tvTitle);
         tvTotalFood = findViewById(R.id.tvTotalFood);
         tvNearExpiry = findViewById(R.id.tvNearExpiry);
+        btnMenuNav = findViewById(R.id.btnMenuNav);
+        btnFridgeNav = findViewById(R.id.btnFridgeNav);
+        btnLogout = findViewById(R.id.btnLogout);
         btnFilterAll = findViewById(R.id.btnFilterAll);
         btnFilterNearExpiry = findViewById(R.id.btnFilterNearExpiry);
     }
@@ -148,31 +156,49 @@ public class FridgeInventoryActivity extends AppCompatActivity implements Invent
     private void loadFromDatabase() {
         dbExecutor.execute(() -> {
             List<FoodItem> list = new ArrayList<>();
-            try (Connection conn = DatabaseConnection.getConnection()) {
-                if (conn == null) throw new SQLException("DB connection is null");
+            try {
+                // Check if user is logged in first
+                String currentUserId = UserSessionManager.getInstance(this).getCurrentUserId();
+                if (currentUserId == null || currentUserId.isEmpty()) {
+                    runOnUiThread(() -> {
+                        Toast.makeText(FridgeInventoryActivity.this, "User not logged in. Please login again.", Toast.LENGTH_LONG).show();
+                        Intent intent = new Intent(FridgeInventoryActivity.this, Login.class);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                        startActivity(intent);
+                        finish();
+                    });
+                    return;
+                }
 
-                String sql = "SELECT food_id, food_name, quantity, expiry_date, image_url, create_at, update_at, note FROM FoodItem";
-                try (PreparedStatement stmt = conn.prepareStatement(sql); ResultSet rs = stmt.executeQuery()) {
-                    while (rs.next()) {
-                        String id = rs.getString("food_id");
-                        String name = rs.getString("food_name");
-                        int qty = rs.getInt("quantity");
-                        java.sql.Timestamp expirySql = rs.getTimestamp("expiry_date");
-                        Date expiry = expirySql == null ? null : new Date(expirySql.getTime());
-                        String imageUrl = rs.getString("image_url");
-                        String note = rs.getString("note");
+                try (Connection conn = DatabaseConnection.getConnection()) {
+                    if (conn == null) throw new SQLException("DB connection is null");
 
-                        Date createdAt = null;
-                        java.sql.Timestamp tsCreate = rs.getTimestamp("create_at");
-                        if (tsCreate != null) createdAt = new Date(tsCreate.getTime());
+                    String sql = "SELECT food_id, food_name, quantity, expiry_date, image_url, create_at, update_at, note FROM FoodItem WHERE user_id = ? ORDER BY create_at DESC";
+                    try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                        stmt.setString(1, currentUserId);
+                        try (ResultSet rs = stmt.executeQuery()) {
+                            while (rs.next()) {
+                                String id = rs.getString("food_id");
+                                String name = rs.getString("food_name");
+                                int qty = rs.getInt("quantity");
+                                java.sql.Timestamp expirySql = rs.getTimestamp("expiry_date");
+                                Date expiry = expirySql == null ? null : new Date(expirySql.getTime());
+                                String imageUrl = rs.getString("image_url");
+                                String note = rs.getString("note");
 
-                        Date updatedAt = null;
-                        java.sql.Timestamp tsUpdate = rs.getTimestamp("update_at");
-                        if (tsUpdate != null) updatedAt = new Date(tsUpdate.getTime());
+                                Date createdAt = null;
+                                java.sql.Timestamp tsCreate = rs.getTimestamp("create_at");
+                                if (tsCreate != null) createdAt = new Date(tsCreate.getTime());
 
-                        FoodItem f = new FoodItem(id, name, qty, expiry, imageUrl, createdAt, updatedAt, null, null, null);
-                        f.setNote(note);
-                        list.add(f);
+                                Date updatedAt = null;
+                                java.sql.Timestamp tsUpdate = rs.getTimestamp("update_at");
+                                if (tsUpdate != null) updatedAt = new Date(tsUpdate.getTime());
+
+                                FoodItem f = new FoodItem(id, name, qty, expiry, imageUrl, createdAt, updatedAt, null, null, null);
+                                f.setNote(note);
+                                list.add(f);
+                            }
+                        }
                     }
                 }
 
@@ -185,7 +211,7 @@ public class FridgeInventoryActivity extends AppCompatActivity implements Invent
 
             } catch (Exception e) {
                 e.printStackTrace();
-                runOnUiThread(() -> Toast.makeText(FridgeInventoryActivity.this, "Lỗi load dữ liệu: " + e.getMessage(), Toast.LENGTH_LONG).show());
+                runOnUiThread(() -> Toast.makeText(FridgeInventoryActivity.this, "Error loading food items: " + e.getMessage(), Toast.LENGTH_LONG).show());
             }
         });
     }
@@ -195,7 +221,8 @@ public class FridgeInventoryActivity extends AppCompatActivity implements Invent
             try (Connection conn = DatabaseConnection.getConnection()) {
                 if (conn == null) throw new SQLException("DB connection is null");
 
-                String sql = "INSERT INTO FoodItem (food_id, food_name, quantity, expiry_date, image_url, note, create_at, update_at) VALUES (?,?,?,?,?,?,?,?)";
+                String currentUserId = UserSessionManager.getInstance(this).getRequiredUserId();
+                String sql = "INSERT INTO FoodItem (food_id, food_name, quantity, expiry_date, image_url, note, create_at, update_at, user_id) VALUES (?,?,?,?,?,?,?,?,?)";
                 try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                     String id = food.getFoodId();
                     if (id == null || id.isEmpty()) {
@@ -211,6 +238,7 @@ public class FridgeInventoryActivity extends AppCompatActivity implements Invent
                     stmt.setString(6, food.getNote());
                     stmt.setTimestamp(7, new java.sql.Timestamp(new Date().getTime()));
                     stmt.setTimestamp(8, new java.sql.Timestamp(new Date().getTime()));
+                    stmt.setString(9, currentUserId);
 
                     if (stmt.executeUpdate() <= 0) throw new SQLException("Insert failed");
                     food.setFoodId(id);
@@ -228,7 +256,8 @@ public class FridgeInventoryActivity extends AppCompatActivity implements Invent
             try (Connection conn = DatabaseConnection.getConnection()) {
                 if (conn == null) throw new SQLException("DB connection is null");
 
-                String sql = "UPDATE FoodItem SET food_name=?, quantity=?, expiry_date=?, image_url=?, note=?, update_at=? WHERE food_id=?";
+                String currentUserId = UserSessionManager.getInstance(this).getRequiredUserId();
+                String sql = "UPDATE FoodItem SET food_name=?, quantity=?, expiry_date=?, image_url=?, note=?, update_at=? WHERE food_id=? AND user_id=?";
                 try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                     stmt.setString(1, food.getFoodName());
                     stmt.setInt(2, food.getQuantity());
@@ -237,6 +266,7 @@ public class FridgeInventoryActivity extends AppCompatActivity implements Invent
                     stmt.setString(5, food.getNote());
                     stmt.setTimestamp(6, new java.sql.Timestamp(new Date().getTime()));
                     stmt.setString(7, food.getFoodId());
+                    stmt.setString(8, currentUserId);
 
                     if (stmt.executeUpdate() <= 0) throw new SQLException("Update failed");
                     runOnUiThread(onSuccess);
@@ -253,9 +283,11 @@ public class FridgeInventoryActivity extends AppCompatActivity implements Invent
             try (Connection conn = DatabaseConnection.getConnection()) {
                 if (conn == null) throw new SQLException("DB connection is null");
 
-                String sql = "DELETE FROM FoodItem WHERE food_id=?";
+                String currentUserId = UserSessionManager.getInstance(this).getRequiredUserId();
+                String sql = "DELETE FROM FoodItem WHERE food_id=? AND user_id=?";
                 try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                     stmt.setString(1, food.getFoodId());
+                    stmt.setString(2, currentUserId);
                     if (stmt.executeUpdate() <= 0) throw new SQLException("Delete failed");
                     runOnUiThread(onSuccess);
                 }
@@ -280,6 +312,48 @@ public class FridgeInventoryActivity extends AppCompatActivity implements Invent
 
         btnFilterAll.setOnClickListener(v -> filterFoodList(etSearch.getText().toString()));
         btnFilterNearExpiry.setOnClickListener(v -> filterNearExpiry(etSearch.getText().toString()));
+    }
+
+    private void setupNavigationButtons() {
+        // Menu button - navigate to HomeMenuActivity
+        btnMenuNav.setOnClickListener(v -> {
+            Intent intent = new Intent(FridgeInventoryActivity.this, HomeMenuActivity.class);
+            startActivity(intent);
+        });
+
+        // Fridge button - already on fridge page
+        btnFridgeNav.setOnClickListener(v -> {
+            Toast.makeText(this, "You are already on Fridge page", Toast.LENGTH_SHORT).show();
+        });
+
+        // Logout button
+        btnLogout.setOnClickListener(v -> showLogoutConfirmDialog());
+    }
+
+    /**
+     * Show logout confirmation dialog
+     */
+    private void showLogoutConfirmDialog() {
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("Đăng xuất")
+                .setMessage("Bạn có chắc chắn muốn đăng xuất?")
+                .setPositiveButton("Đăng xuất", (dialog, which) -> performLogout())
+                .setNegativeButton("Hủy", null)
+                .show();
+    }
+
+    /**
+     * Perform logout: clear session and navigate to Login
+     */
+    private void performLogout() {
+        // Clear user session
+        UserSessionManager.getInstance(this).clearUserSession();
+
+        // Navigate to Login activity
+        Intent intent = new Intent(FridgeInventoryActivity.this, Login.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
 
     @Override
