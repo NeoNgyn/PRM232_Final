@@ -40,6 +40,7 @@
         <activity android:name=".views.activity.CreateRecipeActivity" />
         <activity android:name=".views.activity.RecipeListActivity" />
         <activity android:name=".views.activity.RecipeDetailActivity" />
+        <activity android:name=".views.activity.MealDetailActivity" />
 
         <!-- 🔹 Thêm dòng này -->
         <activity android:name=".views.activity.FridgeInventoryActivity" />
