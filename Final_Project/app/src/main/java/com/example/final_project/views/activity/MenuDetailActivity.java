@@ -69,7 +69,8 @@ public class MenuDetailActivity extends AppCompatActivity {
                             String menuName = rs.getString("menu_name");
                             String imageUrl = rs.getString("image_url");
                             String description = rs.getString("description");
-                            menu = new Menu(menuId, menuName, imageUrl, description, null, null, null, null);
+                            String userId = rs.getString("user_id");
+                            menu = new Menu(menuId, menuName, imageUrl, description, null, null, null, null, userId);
                         }
                     }
                 }
