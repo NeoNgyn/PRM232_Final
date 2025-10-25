@@ -12,7 +12,7 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="451dp"
         android:orientation="vertical"
         android:padding="16dp">
 
@@ -30,16 +30,16 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_marginTop="12dp">
+            android:layout_marginTop="12dp"
+            android:orientation="vertical">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Nguyên liệu cần thêm"
-                android:textStyle="bold"
                 android:textColor="@android:color/black"
-                android:textSize="16sp"/>
+                android:textSize="16sp"
+                android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/tvRecipeIngredients"
@@ -55,35 +55,35 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_marginTop="12dp">
+            android:layout_marginTop="12dp"
+            android:orientation="vertical">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Công thức"
-                android:textStyle="bold"
                 android:textColor="@android:color/black"
-                android:textSize="16sp"/>
+                android:textSize="16sp"
+                android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/tvRecipeInstructions"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
+                android:lineSpacingExtra="4dp"
                 android:text="1. Tôm luộc chín...\n2. Táo thái hạt lựu..."
                 android:textColor="#333333"
-                android:textSize="15sp"
-                android:lineSpacingExtra="4dp"/>
+                android:textSize="15sp" />
         </LinearLayout>
 
         <!-- Thời gian nấu -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
+            android:layout_marginTop="12dp"
             android:gravity="center_vertical"
-            android:layout_marginTop="12dp">
+            android:orientation="horizontal">
 
             <ImageView
                 android:layout_width="20dp"
@@ -95,10 +95,10 @@
                 android:id="@+id/tvRecipeTime"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
                 android:text="Thời gian: 15 phút"
                 android:textColor="#555555"
-                android:textSize="14sp"
-                android:layout_marginStart="8dp" />
+                android:textSize="14sp" />
         </LinearLayout>
 
         <!-- Nút lưu món ăn -->
@@ -108,15 +108,15 @@
             android:layout_height="wrap_content"
             android:layout_gravity="end"
             android:layout_marginTop="16dp"
+            android:backgroundTint="#FF9800"
+            android:drawableLeft="@android:drawable/ic_menu_save"
+            android:drawablePadding="8dp"
             android:paddingHorizontal="16dp"
             android:paddingVertical="8dp"
             android:text="Lưu món ăn"
-            android:textSize="14sp"
             android:textAllCaps="false"
-            android:backgroundTint="#FF9800"
             android:textColor="@android:color/white"
-            android:drawableLeft="@android:drawable/ic_menu_save"
-            android:drawablePadding="8dp" />
+            android:textSize="14sp" />
     </LinearLayout>
 
 </androidx.cardview.widget.CardView>

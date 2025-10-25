@@ -414,17 +414,17 @@ package com.example.final_project.views.adapter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.LinearLayout;
-import android.widget.TextView;
+import android.widget.TextView; // Xóa Button và LinearLayout vì không dùng ở đây nữa
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.LinearLayoutManager; // Thêm import này
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.final_project.R;
 import com.example.final_project.models.entity.ChatMessage;
 import com.example.final_project.models.entity.RecipeData;
 
+import java.util.ArrayList; // Thêm import này
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -436,51 +436,92 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     }
 
     private final List<ChatMessage> chatMessages;
-    private static final int VIEW_TYPE_USER = 1;
-    private static final int VIEW_TYPE_BOT = 2;
     private final OnRecipeSaveListener saveListener;
+
+    // --- SỬA BƯỚC 1: Định nghĩa 3 loại View ---
+    private static final int VIEW_TYPE_USER = 1;
+    private static final int VIEW_TYPE_BOT_TEXT = 2; // Tin nhắn text của Bot (ví dụ: "Đang suy nghĩ...")
+    private static final int VIEW_TYPE_BOT_RECIPE = 3; // Tin nhắn chứa danh sách công thức
 
     public ChatAdapter(List<ChatMessage> chatMessages, OnRecipeSaveListener listener) {
         this.chatMessages = chatMessages;
         this.saveListener = listener;
     }
 
+    // --- SỬA BƯỚC 2: Sửa logic getItemViewType ---
     @Override
     public int getItemViewType(int position) {
-        return chatMessages.get(position).isUser() ? VIEW_TYPE_USER : VIEW_TYPE_BOT;
-    }
-
-    @NonNull
-    @Override
-    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        if (viewType == VIEW_TYPE_USER) {
-            View view = LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.item_chat_user, parent, false);
-            return new UserViewHolder(view);
+        ChatMessage message = chatMessages.get(position);
+        if (message.isUser()) {
+            return VIEW_TYPE_USER;
         } else {
-            View view = LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.item_chat_bot, parent, false);
-            return new BotViewHolder(view);
+            // Kiểm tra xem tin nhắn bot là text hay là công thức
+            String botMessage = message.getMessage();
+            // Dùng logic cũ của bạn để phân biệt
+            if (botMessage.contains("##") && botMessage.contains("@@nguyenlieu")) {
+                return VIEW_TYPE_BOT_RECIPE;
+            } else {
+                // Đây là tin nhắn text thường (Xin chào, Đang suy nghĩ,...)
+                return VIEW_TYPE_BOT_TEXT;
+            }
         }
     }
 
+    // --- SỬA BƯỚC 3: Sửa logic onCreateViewHolder ---
+    @NonNull
+    @Override
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        LayoutInflater inflater = LayoutInflater.from(parent.getContext());
+
+        if (viewType == VIEW_TYPE_USER) {
+            View view = inflater.inflate(R.layout.item_chat_user, parent, false);
+            return new UserViewHolder(view);
+
+        } else if (viewType == VIEW_TYPE_BOT_TEXT) {
+            // Sử dụng layout text mới (item_chat_bot_text.xml)
+            View view = inflater.inflate(R.layout.item_chat_bot_text, parent, false);
+            return new BotTextViewHolder(view);
+
+        } else { // viewType == VIEW_TYPE_BOT_RECIPE
+            // Sử dụng layout chứa RecyclerView (item_chat_bot.xml)
+            View view = inflater.inflate(R.layout.item_chat_bot, parent, false);
+            return new RecipeParentViewHolder(view); // Đổi tên ViewHolder
+        }
+    }
+
+    // --- SỬA BƯỚC 4: Sửa logic onBindViewHolder ---
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         ChatMessage message = chatMessages.get(position);
 
-        // ✅ Nếu là user → hiển thị tin nhắn người dùng
-        if (holder.getItemViewType() == VIEW_TYPE_USER) {
+        // Phân loại view và bind dữ liệu tương ứng
+        int viewType = holder.getItemViewType();
+
+        if (viewType == VIEW_TYPE_USER) {
             ((UserViewHolder) holder).tvMessageUser.setText(message.getMessage());
-            return;
+
+        } else if (viewType == VIEW_TYPE_BOT_TEXT) {
+            ((BotTextViewHolder) holder).tvBotMessage.setText(message.getMessage());
+
+        } else if (viewType == VIEW_TYPE_BOT_RECIPE) {
+            // Gọi hàm bind cho ViewHolder công thức
+            bindRecipeParentViewHolder((RecipeParentViewHolder) holder, message);
         }
 
-        // ✅ Nếu là bot → hiển thị công thức
-        BotViewHolder botHolder = (BotViewHolder) holder;
+        // --- SỬA BƯỚC 5: XÓA BỎ HOÀN TOÀN code "hack" padding ---
+        // Không còn: if (position == chatMessages.size() - 1) ...
+        // File activity_chat.xml đã xử lý việc này.
+    }
+
+    /**
+     * Hàm mới: Chỉ bind dữ liệu cho ViewHolder chứa RecyclerView công thức
+     */
+    private void bindRecipeParentViewHolder(RecipeParentViewHolder holder, ChatMessage message) {
         String fullResponse = message.getMessage();
         String introText = "";
         String recipesText = fullResponse;
 
-        // Cắt phần giới thiệu và phần công thức
+        // Cắt phần giới thiệu (giữ nguyên logic cũ của bạn)
         int firstRecipeMarker = fullResponse.indexOf("## ");
         if (firstRecipeMarker >= 0) {
             introText = firstRecipeMarker > 0 ? fullResponse.substring(0, firstRecipeMarker).trim() : "";
@@ -490,64 +531,46 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             recipesText = "";
         }
 
-        // Giới thiệu bot
-        botHolder.tvBotIntro.setText(introText);
-        botHolder.tvBotIntro.setVisibility(introText.isEmpty() ? View.GONE : View.VISIBLE);
-        botHolder.llRecipeContainer.removeAllViews();
+        // Set text giới thiệu
+        holder.tvBotIntro.setText(introText);
+        holder.tvBotIntro.setVisibility(introText.isEmpty() ? View.GONE : View.VISIBLE);
 
-        // Thêm công thức
+        // --- SỬA BƯỚC 6: Chuẩn bị dữ liệu cho Nested RecyclerView ---
+        List<RecipeData> recipeList = new ArrayList<>();
         if (!recipesText.isEmpty()) {
             String[] recipes = recipesText.split("---");
-
             for (String recipeBlock : recipes) {
                 String trimmedBlock = recipeBlock.trim();
                 if (trimmedBlock.isEmpty()) continue;
 
-                LayoutInflater inflater = LayoutInflater.from(botHolder.itemView.getContext());
-                View recipeCardView = inflater.inflate(R.layout.item_recipe_card, botHolder.llRecipeContainer, false);
-
-                TextView tvTitle = recipeCardView.findViewById(R.id.tvRecipeTitle);
-                TextView tvIngredients = recipeCardView.findViewById(R.id.tvRecipeIngredients);
-                TextView tvInstructions = recipeCardView.findViewById(R.id.tvRecipeInstructions);
-                TextView tvTime = recipeCardView.findViewById(R.id.tvRecipeTime);
-                Button btnSave = recipeCardView.findViewById(R.id.btnSaveRecipe);
-
+                // Trích xuất dữ liệu (giữ nguyên logic cũ)
                 String title = extractSection(trimmedBlock, "##");
                 String ingredients = extractSection(trimmedBlock, "@@nguyenlieu");
                 String instructions = extractSection(trimmedBlock, "@@congthuc");
                 String time = extractSection(trimmedBlock, "@@thoigian");
                 String nutrition = extractSection(trimmedBlock, "@@dinhduong");
 
-                final RecipeData recipeData = new RecipeData(title, ingredients, instructions, time, nutrition);
-
-                tvTitle.setText(recipeData.getTitle());
-                tvIngredients.setText(recipeData.getIngredients());
-                tvInstructions.setText(recipeData.getInstructions());
-                tvTime.setText("⏱ " + recipeData.getTime());
-
-                btnSave.setOnClickListener(v -> {
-                    if (saveListener != null) {
-                        saveListener.onSaveRecipeClicked(recipeData);
-                        btnSave.setText("✅ Đã lưu");
-                        btnSave.setEnabled(false);
-                    }
-                });
-
-                botHolder.llRecipeContainer.addView(recipeCardView);
+                // Thêm vào List, thay vì addView
+                recipeList.add(new RecipeData(title, ingredients, instructions, time, nutrition));
             }
         }
 
-        // ✅ Thêm khoảng trống cho item cuối cùng để không bị che
-        if (position == chatMessages.size() - 1) {
-            int paddingBottomPx = (int) (botHolder.itemView.getContext().getResources().getDisplayMetrics().density * 80);
-            botHolder.itemView.setPadding(0, 0, 0, paddingBottomPx);
+        // --- SỬA BƯỚC 7: Cập nhật cho Nested RecyclerView ---
+
+        // 1. Kiểm tra nếu adapter của RecyclerView con chưa được tạo
+        if (holder.recipeCardAdapter == null) {
+            holder.recipeCardAdapter = new RecipeCardAdapter(recipeList, saveListener);
+            holder.recyclerViewRecipes.setLayoutManager(new LinearLayoutManager(holder.itemView.getContext()));
+            holder.recyclerViewRecipes.setAdapter(holder.recipeCardAdapter);
         } else {
-            botHolder.itemView.setPadding(0, 0, 0, 0);
+            // 2. Nếu đã tồn tại (do tái sử dụng), chỉ cần cập nhật data
+            holder.recipeCardAdapter.updateRecipes(recipeList);
         }
     }
 
+
     /**
-     * Hàm trích xuất nội dung giữa các marker
+     * Hàm trích xuất nội dung (không đổi)
      */
     private String extractSection(String text, String marker) {
         try {
@@ -567,7 +590,7 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         return chatMessages.size();
     }
 
-    // --- ViewHolder người dùng ---
+    // --- ViewHolder người dùng (không đổi) ---
     static class UserViewHolder extends RecyclerView.ViewHolder {
         TextView tvMessageUser;
         UserViewHolder(@NonNull View itemView) {
@@ -576,14 +599,27 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
     }
 
-    // --- ViewHolder bot ---
-    static class BotViewHolder extends RecyclerView.ViewHolder {
-        TextView tvBotIntro;
-        LinearLayout llRecipeContainer;
-        BotViewHolder(@NonNull View itemView) {
+    // --- SỬA BƯỚC 8: Thêm ViewHolder cho Bot Text ---
+    static class BotTextViewHolder extends RecyclerView.ViewHolder {
+        TextView tvBotMessage;
+        BotTextViewHolder(@NonNull View itemView) {
             super(itemView);
+            // ID này phải khớp với file item_chat_bot_text.xml
+            tvBotMessage = itemView.findViewById(R.id.tvBotMessage);
+        }
+    }
+
+    // --- SỬA BƯỚC 9: Đổi tên BotViewHolder thành RecipeParentViewHolder ---
+    static class RecipeParentViewHolder extends RecyclerView.ViewHolder {
+        TextView tvBotIntro;
+        RecyclerView recyclerViewRecipes; // THAY THẾ LinearLayout
+        RecipeCardAdapter recipeCardAdapter; // Thêm tham chiếu đến adapter con
+
+        RecipeParentViewHolder(@NonNull View itemView) {
+            super(itemView);
+            // ID này phải khớp với file item_chat_bot.xml
             tvBotIntro = itemView.findViewById(R.id.tvBotIntro);
-            llRecipeContainer = itemView.findViewById(R.id.llRecipeContainer);
+            recyclerViewRecipes = itemView.findViewById(R.id.recyclerViewRecipes); // ID của RecyclerView
         }
     }
 }
