@@ -2,7 +2,13 @@ package com.example.final_project.views.activity;
 
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.PopupMenu;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -43,6 +49,9 @@ public class HomeMenuActivity extends AppCompatActivity {
     private List<RecipeInMenu> recentRecipeList;
     private MaterialButton fabAddMenu;
 
+    // Lưu padding-top gốc của header để không cộng dồn khi onResume
+    private int headerOriginalPaddingTop = -1;
+
     private final ExecutorService dbExecutor = Executors.newSingleThreadExecutor();
 
     @Override
@@ -50,10 +59,34 @@ public class HomeMenuActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.home);
 
+        // Đảm bảo header luôn ở trên cùng để dễ bấm
+        View header = findViewById(R.id.headerContainer);
+        if (header != null) {
+            // Lấy padding gốc 1 lần
+            if (headerOriginalPaddingTop == -1) {
+                headerOriginalPaddingTop = header.getPaddingTop();
+            }
+            int statusBarHeight = getStatusBarHeight();
+            header.setPadding(header.getPaddingLeft(), headerOriginalPaddingTop + statusBarHeight, header.getPaddingRight(), header.getPaddingBottom());
+
+            header.bringToFront();
+            header.requestLayout();
+            header.invalidate();
+        }
+
         fabAddMenu = findViewById(R.id.fabAddMenu);
         fabAddMenu.setOnClickListener(v -> {
             Intent intent = new Intent(HomeMenuActivity.this, CreateMenuActivity.class);
             startActivity(intent);
+        });
+
+        // Bắt sự kiện click vào avatar để hiển thị menu đăng xuất
+        ImageView imgAvatar = findViewById(R.id.imgAvatar);
+        imgAvatar.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showAvatarMenu(v);
+            }
         });
 
         setupTodayMenusRecyclerView();
@@ -67,6 +100,30 @@ public class HomeMenuActivity extends AppCompatActivity {
         super.onResume();
         loadMenuFromDatabase();
         loadRecentRecipesFromDatabase();
+
+        // Đảm bảo header luôn nằm trên cùng sau khi resume
+        View header = findViewById(R.id.headerContainer);
+        if (header != null) {
+            // Nếu chưa lưu padding gốc (thường đã lưu ở onCreate), lưu lại
+            if (headerOriginalPaddingTop == -1) {
+                headerOriginalPaddingTop = header.getPaddingTop();
+            }
+            int statusBarHeight = getStatusBarHeight();
+            header.setPadding(header.getPaddingLeft(), headerOriginalPaddingTop + statusBarHeight, header.getPaddingRight(), header.getPaddingBottom());
+            header.bringToFront();
+            header.requestLayout();
+            header.invalidate();
+        }
+    }
+
+    // Trợ giúp lấy chiều cao status bar
+    private int getStatusBarHeight() {
+        int result = 0;
+        int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            result = getResources().getDimensionPixelSize(resourceId);
+        }
+        return result;
     }
 
     private void setupTodayMenusRecyclerView() {
@@ -134,8 +191,75 @@ public class HomeMenuActivity extends AppCompatActivity {
         recyclerViewRecentRecipes.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
         recyclerViewRecentRecipes.setHasFixedSize(true);
         recentRecipeList = new ArrayList<>();
-        recentRecipeAdapter = new RecipeAdapter(recentRecipeList);
+        recentRecipeAdapter = new RecipeAdapter(recentRecipeList, new RecipeAdapter.OnRecipeActionListener() {
+            @Override
+            public void onDeleteRecipe(RecipeInMenu recipeInMenu, int position) {
+                new androidx.appcompat.app.AlertDialog.Builder(HomeMenuActivity.this)
+                        .setTitle("Xóa công thức")
+                        .setMessage("Bạn có chắc muốn xoá không?")
+                        .setPositiveButton("Xóa", (dialog, which) -> {
+                            // Xóa khỏi database
+                            deleteRecipeInMenuFromDb(recipeInMenu, () -> {
+                                // Xóa khỏi danh sách hiển thị
+                                recentRecipeList.remove(position);
+                                recentRecipeAdapter.notifyItemRemoved(position);
+                                Toast.makeText(HomeMenuActivity.this, "Đã xóa recipe khỏi database.", Toast.LENGTH_SHORT).show();
+                            }, error -> {
+                                Toast.makeText(HomeMenuActivity.this, "Lỗi khi xóa: " + error, Toast.LENGTH_LONG).show();
+                            });
+                        })
+                        .setNegativeButton("Hủy", (dialog, which) -> dialog.dismiss())
+                        .show();
+            }
+
+            @Override
+            public void onEditRecipe(RecipeInMenu recipeInMenu, int position) {
+                // Nếu muốn xử lý nút sửa ở trang chủ, thêm logic tại đây
+            }
+        });
         recyclerViewRecentRecipes.setAdapter(recentRecipeAdapter);
+    }
+
+    // Hàm xóa recipe khỏi bảng RecipeInMenu
+    private void deleteRecipeInMenuFromDb(RecipeInMenu recipeInMenu, Runnable onSuccess, java.util.function.Consumer<String> onError) {
+        dbExecutor.execute(() -> {
+            try (Connection conn = DatabaseConnection.getConnection()) {
+                if (conn == null) throw new SQLException("DB connection is null");
+                String recipeMenuId = recipeInMenu.getRecipeMenuId();
+                String recipeId = recipeInMenu.getRecipe() != null ? recipeInMenu.getRecipe().getRecipeId() : null;
+                int affected = 0;
+                // Xóa khỏi RecipeInMenu trước
+                if (recipeMenuId != null && !recipeMenuId.isEmpty()) {
+                    String sql = "DELETE FROM RecipeInMenu WHERE recipeMenu_id = ?";
+                    try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                        stmt.setString(1, recipeMenuId);
+                        affected = stmt.executeUpdate();
+                    }
+                } else if (recipeId != null) {
+                    String sql = "DELETE FROM RecipeInMenu WHERE recipe_id = ?";
+                    try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                        stmt.setString(1, recipeId);
+                        affected = stmt.executeUpdate();
+                    }
+                }
+                // Sau đó xóa khỏi Recipe
+                if (recipeId != null) {
+                    String sql = "DELETE FROM Recipe WHERE recipe_id = ?";
+                    try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                        stmt.setString(1, recipeId);
+                        stmt.executeUpdate();
+                    }
+                }
+                if (affected > 0) {
+                    runOnUiThread(onSuccess);
+                } else {
+                    runOnUiThread(() -> onError.accept("Không tìm thấy hoặc xóa không thành công."));
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                runOnUiThread(() -> onError.accept(e.getMessage()));
+            }
+        });
     }
 
     private void loadMenuFromDatabase() {
@@ -285,5 +409,43 @@ public class HomeMenuActivity extends AppCompatActivity {
                 runOnUiThread(() -> onError.accept(e.getMessage()));
             }
         });
+    }
+
+    private void showAvatarMenu(View anchor) {
+        PopupMenu popup = new PopupMenu(this, anchor);
+        MenuInflater inflater = popup.getMenuInflater();
+        inflater.inflate(R.menu.menu_avatar, popup.getMenu());
+        popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                if (item.getItemId() == R.id.action_logout) {
+                    showLogoutDialog();
+                    return true;
+                }
+                return false;
+            }
+        });
+        popup.show();
+    }
+
+    private void showLogoutDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("Đăng xuất")
+                .setMessage("Bạn có muốn đăng xuất không?")
+                .setPositiveButton("Đăng xuất", (dialog, which) -> performLogout())
+                .setNegativeButton("Hủy", (dialog, which) -> dialog.dismiss())
+                .show();
+    }
+
+    private void performLogout() {
+        // Xóa thông tin đăng nhập (ví dụ SharedPreferences)
+        SharedPreferences prefs = getSharedPreferences("user_prefs", MODE_PRIVATE);
+        prefs.edit().clear().apply();
+        // Nếu dùng FirebaseAuth thì thêm: FirebaseAuth.getInstance().signOut();
+        // Chuyển về màn hình đăng nhập và clear backstack
+        Intent intent = new Intent(this, Login.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
 }

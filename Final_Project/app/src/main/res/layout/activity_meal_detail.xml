@@ -20,7 +20,8 @@
 
             <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="300dp">
+                android:layout_height="300dp"
+                android:clipToPadding="false">
 
                 <androidx.cardview.widget.CardView
                     android:layout_width="match_parent"
@@ -33,32 +34,51 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:scaleType="centerCrop"
+                        android:contentDescription="@string/food_image"
                         tools:src="@drawable/placeholder_food" />
 
                 </androidx.cardview.widget.CardView>
 
+                <!-- Back button: raised so it's above the image and easier to tap -->
                 <ImageButton
                     android:id="@+id/btn_back"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:layout_marginStart="16dp"
-                    android:layout_marginTop="16dp"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginTop="20dp"
                     android:background="@drawable/circular_add_button_background"
-                    android:src="@drawable/ic_arrow_back" />
+                    android:src="@drawable/ic_arrow_back"
+                    android:contentDescription="@string/back_button"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:elevation="12dp"
+                    android:translationZ="12dp"
+                    android:padding="8dp"
+                    android:minWidth="48dp"
+                    android:minHeight="48dp" />
 
+                <!-- More button (text) raised and clickable -->
                 <TextView
                     android:id="@+id/btn_more_text"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
                     android:layout_gravity="end"
-                    android:layout_marginTop="16dp"
-                    android:layout_marginEnd="16dp"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginEnd="12dp"
                     android:background="@drawable/circular_add_button_background"
                     android:gravity="center"
-                    android:text="⋮"
+                    android:text="@string/more_options"
                     android:textColor="@android:color/black"
-                    android:textSize="24sp"
-                    android:textStyle="bold" />
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    android:contentDescription="@string/more_options"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:elevation="12dp"
+                    android:translationZ="12dp"
+                    android:padding="8dp"
+                    android:minWidth="48dp"
+                    android:minHeight="48dp" />
 
             </FrameLayout>
 
@@ -73,7 +93,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="16dp"
                     android:layout_toStartOf="@+id/iv_heart"
-                    android:text="Coconut Curry Red Lentil Dahl with Tomatoes, Cilantro &amp; Rice."
+                    android:text="@string/recipe_name_default"
                     android:textColor="@android:color/black"
                     android:textSize="24sp"
                     android:textStyle="bold" />
@@ -83,7 +103,8 @@
                     android:layout_width="24dp"
                     android:layout_height="24dp"
                     android:layout_alignParentEnd="true"
-                    android:src="@drawable/ic_favorite_border" />
+                    android:src="@drawable/ic_favorite_border"
+                    android:contentDescription="@string/favorite_desc" />
 
                 <TextView
                     android:id="@+id/tv_detail_info"
@@ -91,7 +112,7 @@
                     android:layout_height="wrap_content"
                     android:layout_below="@id/tv_detail_meal_name"
                     android:layout_marginTop="8dp"
-                    android:text="35 minutes • 2 servings"
+                    android:text="@string/recipe_desc_default"
                     android:textSize="16sp" />
 
             </RelativeLayout>
@@ -114,7 +135,7 @@
                         style="@style/Widget.MaterialComponents.Chip.Choice"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Nutritions"
+                        android:text="@string/chip_nutritions"
                         android:textColor="@color/chip_text_color_selector"
                         app:chipBackgroundColor="@color/chip_background_color_selector"
                         app:chipStrokeColor="#ADADAD"
@@ -126,7 +147,7 @@
                         style="@style/Widget.MaterialComponents.Chip.Choice"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Ingredients"
+                        android:text="@string/chip_ingredients"
                         android:textColor="@color/chip_text_color_selector"
                         app:chipBackgroundColor="@color/chip_background_color_selector"
                         app:chipStrokeColor="#ADADAD"
@@ -139,7 +160,7 @@
                         style="@style/Widget.MaterialComponents.Chip.Choice"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Instructions"
+                        android:text="@string/chip_instructions"
                         android:textColor="@color/chip_text_color_selector"
                         app:chipBackgroundColor="@color/chip_background_color_selector"
                         app:chipStrokeColor="#ADADAD"
@@ -179,25 +200,30 @@
         app:layout_constraintBottom_toBottomOf="parent">
 
         <Button
-            android:id="@+id/btn_cooked"
+            android:id="@+id/btn_edit"
             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="0dp"
             android:layout_height="60dp"
             android:layout_weight="1"
-            android:text="Cooked?"
+            android:text="@string/btn_edit_text"
             android:textAllCaps="false"
-            android:layout_marginEnd="8dp"/>
+            android:layout_marginEnd="8dp"
+            android:backgroundTint="#2196F3"
+            android:textColor="@android:color/white"
+            android:drawablePadding="8dp"/>
 
         <Button
-            android:id="@+id/btn_start_cooking"
+            android:id="@+id/btn_delete"
             android:layout_width="0dp"
             android:layout_height="60dp"
             android:layout_weight="1"
-            android:text="Start Cooking"
+            android:text="@string/btn_delete_text"
             android:textAllCaps="false"
             app:cornerRadius="12dp"
-            android:backgroundTint="#F9881F"
-            android:layout_marginStart="8dp"/>
+            android:backgroundTint="#F44336"
+            android:textColor="@android:color/white"
+            android:layout_marginStart="8dp"
+            android:drawablePadding="8dp"/>
 
     </LinearLayout>
 
