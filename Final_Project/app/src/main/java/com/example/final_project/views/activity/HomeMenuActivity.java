@@ -16,6 +16,7 @@ import com.example.final_project.utils.DatabaseConnection;
 import com.example.final_project.views.adapter.HomeMenuAdapter;
 import com.example.final_project.views.adapter.RecipeAdapter;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -49,6 +50,13 @@ public class HomeMenuActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.home);
+
+        FloatingActionButton btnCamera = findViewById(R.id.btn_camera);
+        btnCamera.setOnClickListener(v -> {
+            Intent intent = new Intent(HomeMenuActivity.this, CameraActivity.class);
+            startActivity(intent);
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+        });
 
         fabAddMenu = findViewById(R.id.fabAddMenu);
         fabAddMenu.setOnClickListener(v -> {

@@ -24,6 +24,9 @@
         <activity
             android:name=".views.activity.Login"
             android:exported="false" />
+        <activity android:name=".views.activity.CameraActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
         <activity
             android:name=".views.activity.HomeMenuActivity"
             android:exported="true">
