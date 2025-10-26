@@ -3,6 +3,7 @@ package com.example.final_project.views.activity;
 import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.ImageButton;
 import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
@@ -31,27 +32,57 @@ public class RecipeListActivity extends AppCompatActivity {
     private static final int REQUEST_ADD_RECIPE = 1001;
     private String currentMenuId;
 
+    // Lưu padding-top gốc của header để không cộng dồn khi onResume
+    private int headerOriginalPaddingTop = -1;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_recipe_list);
 
+        // Đảm bảo header luôn ở trên cùng và không bị che bởi status bar
+        View header = findViewById(R.id.headerContainer);
+        if (header != null) {
+            if (headerOriginalPaddingTop == -1) {
+                headerOriginalPaddingTop = header.getPaddingTop();
+            }
+            int statusBarHeight = getStatusBarHeight();
+            header.setPadding(header.getPaddingLeft(), headerOriginalPaddingTop + statusBarHeight, header.getPaddingRight(), header.getPaddingBottom());
+            header.bringToFront();
+            header.requestLayout();
+            header.invalidate();
+        }
+
         recyclerViewRecipe = findViewById(R.id.recyclerViewRecipe);
         recyclerViewRecipe.setLayoutManager(new LinearLayoutManager(this));
         recipeList = new ArrayList<>();
-        // Create adapter with delete action callback
-        recipeAdapter = new RecipeAdapter(recipeList, (recipeInMenu, position) -> {
-            // Show confirmation dialog
-            new AlertDialog.Builder(RecipeListActivity.this)
-                    .setTitle("Xóa công thức")
-                    .setMessage("Bạn có chắc muốn xoá không?")
-                    .setPositiveButton("Xóa", (dialog, which) -> {
-                        // perform delete
-                        String recipeMenuId = recipeInMenu.getRecipeMenuId();
-                        deleteRecipeInMenu(recipeMenuId, currentMenuId, recipeInMenu);
-                    })
-                    .setNegativeButton("Hủy", (dialog, which) -> dialog.dismiss())
-                    .show();
+        // Create adapter with delete and edit action callback
+        recipeAdapter = new RecipeAdapter(recipeList, new RecipeAdapter.OnRecipeActionListener() {
+            @Override
+            public void onDeleteRecipe(RecipeInMenu recipeInMenu, int position) {
+                new AlertDialog.Builder(RecipeListActivity.this)
+                        .setTitle("Xóa công thức")
+                        .setMessage("Bạn có chắc muốn xoá không?")
+                        .setPositiveButton("Xóa", (dialog, which) -> {
+                            String recipeMenuId = recipeInMenu.getRecipeMenuId();
+                            deleteRecipeInMenu(recipeMenuId, currentMenuId, recipeInMenu);
+                        })
+                        .setNegativeButton("Hủy", (dialog, which) -> dialog.dismiss())
+                        .show();
+            }
+            @Override
+            public void onEditRecipe(RecipeInMenu recipeInMenu, int position) {
+                if (recipeInMenu.getRecipe() != null) {
+                    android.content.Intent intent = new android.content.Intent(RecipeListActivity.this, CreateRecipeActivity.class);
+                    intent.putExtra("recipe", (java.io.Serializable) recipeInMenu.getRecipe());
+                    if (recipeInMenu.getMenu() != null && recipeInMenu.getMenu().getMenuId() != null) {
+                        intent.putExtra("menu_id", recipeInMenu.getMenu().getMenuId());
+                    } else if (currentMenuId != null) {
+                        intent.putExtra("menu_id", currentMenuId);
+                    }
+                    startActivity(intent);
+                }
+            }
         });
         recyclerViewRecipe.setAdapter(recipeAdapter);
 
@@ -74,6 +105,33 @@ public class RecipeListActivity extends AppCompatActivity {
             intent.putExtra("menu_id", menuId);
             startActivityForResult(intent, REQUEST_ADD_RECIPE);
         });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Ensure header remains on top after resume
+        View header = findViewById(R.id.headerContainer);
+        if (header != null) {
+            if (headerOriginalPaddingTop == -1) {
+                headerOriginalPaddingTop = header.getPaddingTop();
+            }
+            int statusBarHeight = getStatusBarHeight();
+            header.setPadding(header.getPaddingLeft(), headerOriginalPaddingTop + statusBarHeight, header.getPaddingRight(), header.getPaddingBottom());
+            header.bringToFront();
+            header.requestLayout();
+            header.invalidate();
+        }
+    }
+
+    // Trợ giúp lấy chiều cao status bar
+    private int getStatusBarHeight() {
+        int result = 0;
+        int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            result = getResources().getDimensionPixelSize(resourceId);
+        }
+        return result;
     }
 
     /**

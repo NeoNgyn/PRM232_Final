@@ -16,6 +16,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.final_project.R;
 import com.example.final_project.models.entity.Menu;
 import com.example.final_project.utils.DatabaseConnection;
+import com.example.final_project.utils.UserSessionManager;
 import com.example.final_project.utils.CloudinaryHelper;
 import com.example.final_project.utils.DBMigrationHelper;
 import com.bumptech.glide.Glide;
@@ -274,7 +275,8 @@ public class CreateMenuActivity extends AppCompatActivity {
             Log.e(TAG, "Date parse error", e);
         }
 
-        Menu menuToSave = new Menu(existingMenuId, name, null, description, fromDate, toDate, null, null);
+        Menu menuToSave = new Menu(existingMenuId, name, null, description, fromDate, toDate, null, null, 
+                UserSessionManager.getInstance(this).getRequiredUserId());
 
         if (imageUri != null) {
             // New image selected, upload it
@@ -327,7 +329,7 @@ public class CreateMenuActivity extends AppCompatActivity {
                 }
                  if (conn == null) throw new SQLException("DB connection is null");
 
-                String sql = "INSERT INTO Menu (menu_id, menu_name, image_url, description, from_date, to_date, create_at, update_at) VALUES (?,?,?,?,?,?,?,?)";
+                String sql = "INSERT INTO Menu (menu_id, menu_name, image_url, description, from_date, to_date, create_at, update_at, user_id) VALUES (?,?,?,?,?,?,?,?,?)";
                 // Determine menu id: if caller didn't provide one, generate sequential M001, M002, ...
                 String id = menu.getMenuId();
                 if (id == null || id.isEmpty()) {
@@ -371,6 +373,7 @@ public class CreateMenuActivity extends AppCompatActivity {
                     
                     stmt.setTimestamp(7, new java.sql.Timestamp(new Date().getTime()));
                     stmt.setTimestamp(8, new java.sql.Timestamp(new Date().getTime()));
+                    stmt.setString(9, menu.getUserId());
 
                     if (stmt.executeUpdate() <= 0) throw new SQLException("Insert failed");
                     menu.setMenuId(id);
@@ -388,7 +391,7 @@ public class CreateMenuActivity extends AppCompatActivity {
             try (Connection conn = DatabaseConnection.getConnection()) {
                 if (conn == null) throw new SQLException("DB connection is null");
 
-                String sql = "UPDATE Menu SET menu_name = ?, image_url = ?, description = ?, from_date = ?, to_date = ?, update_at = ? WHERE menu_id = ?";
+                String sql = "UPDATE Menu SET menu_name = ?, image_url = ?, description = ?, from_date = ?, to_date = ?, update_at = ? WHERE menu_id = ? AND user_id = ?";
                 try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                     stmt.setString(1, menu.getMenuName());
                     stmt.setString(2, menu.getImageUrl());
@@ -410,6 +413,7 @@ public class CreateMenuActivity extends AppCompatActivity {
                     
                     stmt.setTimestamp(6, new java.sql.Timestamp(new Date().getTime()));
                     stmt.setString(7, menu.getMenuId());
+                    stmt.setString(8, menu.getUserId());
 
                     if (stmt.executeUpdate() <= 0) throw new SQLException("Update failed. Menu not found.");
                     runOnUiThread(onSuccess);

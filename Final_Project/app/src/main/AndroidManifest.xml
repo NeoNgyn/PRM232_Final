@@ -36,6 +36,7 @@
             </intent-filter>
         </activity>
 
+
         <activity android:name=".MainActivity" android:exported="true" />
 
         <!--  Add-ons  -->
@@ -43,9 +44,11 @@
         <activity android:name=".views.activity.CreateRecipeActivity" />
         <activity android:name=".views.activity.RecipeListActivity" />
         <activity android:name=".views.activity.RecipeDetailActivity" />
+        <activity android:name=".views.activity.MealDetailActivity" />
 
         <!-- 🔹 Thêm dòng này -->
         <activity android:name=".views.activity.FridgeInventoryActivity" />
+        <activity android:name=".views.activity.SearchResultsActivity" />
         <activity android:name=".views.activity.StartedScreen" />
     </application>
 
