@@ -7,10 +7,12 @@
 
     <!-- Header with gradient background -->
     <androidx.cardview.widget.CardView
+        android:id="@+id/headerCardView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:cardCornerRadius="0dp"
-        app:cardElevation="4dp">
+        app:cardElevation="8dp"
+        android:translationZ="10dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -18,15 +20,19 @@
             android:background="@color/orange"
             android:padding="16dp"
             android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:gravity="center_vertical"
+            android:clickable="false"
+            android:focusable="false">
 
             <ImageButton
                 android:id="@+id/btnBack"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:padding="4dp"
                 android:src="@drawable/ic_back"
-                android:background="@null"
+                android:background="?attr/selectableItemBackgroundBorderless"
                 android:scaleType="centerInside"
+                android:contentDescription="Back button"
                 app:tint="@color/white"/>
 
             <TextView
@@ -42,11 +48,13 @@
 
             <ImageButton
                 android:id="@+id/btnAdd"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:padding="4dp"
                 android:src="@drawable/ic_add"
-                android:background="@null"
+                android:background="?attr/selectableItemBackgroundBorderless"
                 android:scaleType="centerInside"
+                android:contentDescription="Add button"
                 app:tint="@color/white" />
         </LinearLayout>
     </androidx.cardview.widget.CardView>
@@ -200,56 +208,55 @@
             android:layout_height="match_parent"/>
     </LinearLayout>
 
-    <!-- Bottom Navigation Bar -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:background="@android:color/white"
-        android:elevation="8dp"
-        android:padding="12dp"
-        android:gravity="center">
+        <!-- Bottom Navigation Bar -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:background="@android:color/white"
+            android:elevation="8dp"
+            android:padding="12dp"
+            android:gravity="center">
 
-        <!-- Menu Button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnMenuNav"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_weight="1"
-            android:text="🍽️ Menu"
-            android:textSize="12sp"
-            android:textColor="@android:color/white"
-            android:layout_marginEnd="8dp"
-            app:backgroundTint="#2196F3"
-            app:cornerRadius="8dp"
-            style="@style/Widget.MaterialComponents.Button" />
+            <!-- Menu Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnMenuNav"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:text="🍽️ Menu"
+                android:textSize="12sp"
+                android:textColor="@android:color/white"
+                android:layout_marginEnd="8dp"
+                app:backgroundTint="#2196F3"
+                app:cornerRadius="8dp"
+                style="@style/Widget.MaterialComponents.Button" />
 
-        <!-- Fridge Button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnFridgeNav"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_weight="1"
-            android:text="🍒 Tủ Lạnh"
-            android:textSize="12sp"
-            android:textColor="@android:color/white"
-            android:layout_marginEnd="8dp"
-            app:backgroundTint="#4CAF50"
-            app:cornerRadius="8dp"
-            style="@style/Widget.MaterialComponents.Button" />
+            <!-- Fridge Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnFridgeNav"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:text="🍒 Tủ Lạnh"
+                android:textSize="12sp"
+                android:textColor="@android:color/white"
+                app:backgroundTint="#4CAF50"
+                app:cornerRadius="8dp"
+                style="@style/Widget.MaterialComponents.Button" />
 
-        <!-- Logout Button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnLogout"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_weight="1"
-            android:text="🚪 Đăng xuất"
-            android:textSize="12sp"
-            android:textColor="@android:color/white"
-            app:backgroundTint="#F44336"
-            app:cornerRadius="8dp"
-            style="@style/Widget.MaterialComponents.Button" />
+            <!-- Logout Button - COMMENTED OUT, moved to Home Menu Activity Avatar Menu -->
+            <!--<com.google.android.material.button.MaterialButton
+                android:id="@+id/btnLogout"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:text="🚪 Đăng xuất"
+                android:textSize="12sp"
+                android:textColor="@android:color/white"
+                app:backgroundTint="#F44336"
+                app:cornerRadius="8dp"
+                style="@style/Widget.MaterialComponents.Button" />-->
 
-    </LinearLayout>
+        </LinearLayout>
 </LinearLayout>

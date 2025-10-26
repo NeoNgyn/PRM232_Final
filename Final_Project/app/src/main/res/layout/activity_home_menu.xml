@@ -85,14 +85,18 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:cardCornerRadius="25dp"
-            app:cardElevation="2dp">
+            app:cardElevation="3dp"
+            app:cardBackgroundColor="@android:color/white">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:padding="12dp"
-                android:gravity="center_vertical">
+                android:paddingStart="16dp"
+                android:paddingEnd="8dp"
+                android:paddingVertical="4dp"
+                android:gravity="center_vertical"
+                android:minHeight="48dp">
 
                 <EditText
                     android:id="@+id/etSearch"
@@ -102,16 +106,24 @@
                     android:hint="Tìm kiếm thực phẩm, món ăn..."
                     android:background="@android:color/transparent"
                     android:textSize="14sp"
-                    android:padding="8dp"
+                    android:paddingVertical="12dp"
                     android:inputType="text"
+                    android:imeOptions="actionSearch"
+                    android:maxLines="1"
+                    android:textColorHint="#999"
                     android:autofillHints="Search food" />
 
                 <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
+                    android:id="@+id/imgSearchIcon"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
                     android:src="@android:drawable/ic_menu_search"
-                    android:layout_marginStart="8dp"
-                    android:contentDescription="Search icon" />
+                    android:padding="12dp"
+                    android:contentDescription="Search icon"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:tint="#2196F3"
+                    android:background="?attr/selectableItemBackgroundBorderless" />
 
             </LinearLayout>
 
@@ -301,13 +313,12 @@
                 android:text="🍒 Tủ Lạnh"
                 android:textSize="12sp"
                 android:textColor="@android:color/white"
-                android:layout_marginEnd="8dp"
                 app:backgroundTint="#4CAF50"
                 app:cornerRadius="8dp"
                 style="@style/Widget.MaterialComponents.Button" />
 
-            <!-- Logout Button -->
-            <com.google.android.material.button.MaterialButton
+            <!-- Logout Button - COMMENTED OUT, now accessible via Avatar Menu -->
+            <!--<com.google.android.material.button.MaterialButton
                 android:id="@+id/btnLogout"
                 android:layout_width="0dp"
                 android:layout_height="48dp"
@@ -317,7 +328,7 @@
                 android:textColor="@android:color/white"
                 app:backgroundTint="#F44336"
                 app:cornerRadius="8dp"
-                style="@style/Widget.MaterialComponents.Button" />
+                style="@style/Widget.MaterialComponents.Button" />-->
 
         </LinearLayout>
 
