@@ -24,14 +24,23 @@
         <activity
             android:name=".views.activity.Login"
             android:exported="false" />
+<!--        <activity-->
+<!--            android:name=".views.activity.HomeMenuActivity"-->
+<!--            android:exported="true">-->
+<!--            <intent-filter>-->
+<!--                <action android:name="android.intent.action.MAIN" />-->
+<!--                <category android:name="android.intent.category.LAUNCHER" />-->
+<!--            </intent-filter>-->
+<!--        </activity>-->
         <activity
             android:name=".views.activity.HomeMenuActivity"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+            android:windowSoftInputMode="adjustResize|stateHidden"
+            android:exported="true">   <intent-filter>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent-filter>
         </activity>
+
 
         <activity android:name=".MainActivity" android:exported="true" />
 
@@ -40,9 +49,11 @@
         <activity android:name=".views.activity.CreateRecipeActivity" />
         <activity android:name=".views.activity.RecipeListActivity" />
         <activity android:name=".views.activity.RecipeDetailActivity" />
+        <activity android:name=".views.activity.MealDetailActivity" />
 
         <!-- 🔹 Thêm dòng này -->
         <activity android:name=".views.activity.FridgeInventoryActivity" />
+        <activity android:name=".views.activity.SearchResultsActivity" />
         <activity android:name=".views.activity.StartedScreen" />
     </application>
 

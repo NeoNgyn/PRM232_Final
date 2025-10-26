@@ -2,30 +2,26 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="horizontal"
-    android:padding="8dp"
-    android:gravity="start">
+    android:orientation="vertical"
+    android:paddingStart="12dp"
+    android:paddingEnd="12dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp"
+    android:clipToPadding="false">
 
-    <!-- Avatar bot -->
-    <ImageView
-        android:id="@+id/imgBotAvatar"
-        android:layout_width="35dp"
-        android:layout_height="35dp"
-        android:src="@drawable/icon"
-        android:scaleType="centerCrop"
-        android:layout_marginEnd="8dp"
-        android:background="@drawable/avatar_circle_bg"
-        android:clipToOutline="true"
-        android:outlineProvider="background" />
-
-    <!-- Tin nhắn bot -->
     <TextView
-        android:id="@+id/tvMessageBot"
-        android:layout_width="wrap_content"
+        android:id="@+id/tvBotIntro"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/bg_bot_bubble"
-        android:padding="12dp"
-        android:textColor="#000000"
-        android:textSize="15sp"
-        android:maxWidth="250dp" />
+        android:text="Phần giới thiệu"
+        android:textColor="@android:color/black"
+        android:textSize="16sp"
+        android:layout_marginBottom="8dp"
+        android:visibility="gone" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewRecipes"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:nestedScrollingEnabled="false" />
 </LinearLayout>

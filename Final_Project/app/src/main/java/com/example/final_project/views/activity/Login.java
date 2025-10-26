@@ -20,6 +20,7 @@ import androidx.core.content.ContextCompat;
 
 import com.example.final_project.R;
 import com.example.final_project.utils.DatabaseConnection;
+import com.example.final_project.utils.UserSessionManager;
 import com.example.final_project.BuildConfig;
 import com.example.final_project.views.activity.HomeMenuActivity;
 
@@ -144,9 +145,16 @@ public class Login extends AppCompatActivity {
             ExecutorService executor = Executors.newSingleThreadExecutor();
             executor.execute(() -> {
                 int result = checkLoginResultCode(email, password);
+                
+                // If login succeeded, fetch and save user session on background thread before navigating
+                if (result == LOGIN_SUCCESS) {
+                    result = fetchAndSaveUserSession(email) ? LOGIN_SUCCESS : LOGIN_ERROR;
+                }
+                
+                final int finalResult = result;
                 runOnUiThread(() -> {
                     btnLogin.setEnabled(true);
-                    switch (result) {
+                    switch (finalResult) {
                         case LOGIN_SUCCESS:
                             Intent intent = new Intent(Login.this, HomeMenuActivity.class);
                             Toast.makeText(Login.this, "Login successfully!", Toast.LENGTH_SHORT).show();
@@ -236,6 +244,39 @@ public class Login extends AppCompatActivity {
         } catch (Exception e) {
             Log.e(TAG, "Error during login", e);
             return LOGIN_ERROR;
+        }
+    }
+
+    /**
+     * Fetch user details from database and save to session
+     * Returns true if session was saved successfully, false otherwise
+     */
+    private boolean fetchAndSaveUserSession(String email) {
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            if (conn == null) {
+                Log.e(TAG, "Cannot fetch user details: DB connection is null");
+                return false;
+            }
+            String sql = "SELECT user_id, fullname FROM `User` WHERE LOWER(email) = ?";
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setString(1, email.trim().toLowerCase());
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        String userId = rs.getString("user_id");
+                        String fullName = rs.getString("fullname");
+                        // Save to UserSessionManager
+                        UserSessionManager.getInstance(this).saveUserSession(userId, email, fullName);
+                        Log.d(TAG, "User session saved: userId=" + userId + ", email=" + email);
+                        return true;
+                    } else {
+                        Log.e(TAG, "User not found in database for email: " + email);
+                        return false;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error fetching user details", e);
+            return false;
         }
     }
 }
