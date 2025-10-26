@@ -21,3 +21,5 @@ public class ChatMessage {
         this.message = message;
     }
 }
+// File: com/example/final_project/models/entity/ChatMessage.java
+

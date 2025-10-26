@@ -4,11 +4,17 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.view.KeyEvent;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -52,7 +58,10 @@ public class HomeMenuActivity extends AppCompatActivity {
     private MaterialButton btnGoToFridge;
     private MaterialButton btnMenuNav;
     private MaterialButton btnFridgeNav;
-    private MaterialButton btnLogout;
+    // Removed btnLogout - now accessed via avatar menu
+    private ImageView imgAvatar;
+    private ImageView imgSearchIcon;
+    private EditText etSearch;
 
     // Lưu padding-top gốc của header để không cộng dồn khi onResume
     private int headerOriginalPaddingTop = -1;
@@ -89,7 +98,27 @@ public class HomeMenuActivity extends AppCompatActivity {
         btnGoToFridge = findViewById(R.id.btnGoToFridge);
         btnMenuNav = findViewById(R.id.btnMenuNav);
         btnFridgeNav = findViewById(R.id.btnFridgeNav);
-        btnLogout = findViewById(R.id.btnLogout);
+        // btnLogout removed - now accessed via avatar menu
+        imgAvatar = findViewById(R.id.imgAvatar);
+
+        // Setup avatar click listener for popup menu
+        imgAvatar.setOnClickListener(v -> showAvatarMenu(v));
+
+        // Setup search functionality
+        etSearch = findViewById(R.id.etSearch);
+        imgSearchIcon = findViewById(R.id.imgSearchIcon);
+        setupSearchFunctionality();
+
+        // Add click listener to search icon with visual feedback
+        imgSearchIcon.setOnClickListener(v -> {
+            // Hide keyboard when search icon is clicked
+            android.view.inputmethod.InputMethodManager imm =
+                (android.view.inputmethod.InputMethodManager) getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
+            if (imm != null) {
+                imm.hideSoftInputFromWindow(etSearch.getWindowToken(), 0);
+            }
+            performSearch();
+        });
 
         // Go to Fridge button
         btnGoToFridge.setOnClickListener(v -> navigateToFridge());
@@ -102,8 +131,7 @@ public class HomeMenuActivity extends AppCompatActivity {
         // Bottom navigation - Fridge
         btnFridgeNav.setOnClickListener(v -> navigateToFridge());
 
-        // Logout button
-        btnLogout.setOnClickListener(v -> showLogoutConfirmDialog());
+        // Logout button removed from bottom nav - now in avatar menu
 
         setupTodayMenusRecyclerView();
         setupUpcomingMenusRecyclerView();
@@ -446,10 +474,81 @@ public class HomeMenuActivity extends AppCompatActivity {
     }
 
     /**
+     * Show avatar popup menu with logout option
+     */
+    private void showAvatarMenu(View anchor) {
+        PopupMenu popup = new PopupMenu(this, anchor);
+        MenuInflater inflater = popup.getMenuInflater();
+        inflater.inflate(R.menu.menu_avatar, popup.getMenu());
+
+        popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                if (item.getItemId() == R.id.action_logout) {
+                    showLogoutConfirmDialog();
+                    return true;
+                }
+                return false;
+            }
+        });
+
+        popup.show();
+    }
+
+    /**
      * Navigate to FridgeInventoryActivity
      */
     private void navigateToFridge() {
         Intent intent = new Intent(HomeMenuActivity.this, FridgeInventoryActivity.class);
+        startActivity(intent);
+    }
+
+    /**
+     * Setup search functionality with Enter key and action button listener
+     */
+    private void setupSearchFunctionality() {
+        if (etSearch == null) return;
+
+        // Handle Enter key press
+        etSearch.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_SEARCH ||
+                    (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER &&
+                     event.getAction() == KeyEvent.ACTION_DOWN)) {
+                    performSearch();
+                    return true;
+                }
+                return false;
+            }
+        });
+
+        // Optional: Add text watcher for real-time search (uncomment if needed)
+        /*
+        etSearch.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                // Implement real-time search if needed
+            }
+        });
+        */
+    }
+
+    /**
+     * Perform search and navigate to search results activity
+     */
+    private void performSearch() {
+        String query = etSearch.getText().toString().trim();
+
+        // If query is empty, pass empty string to show all results
+        Intent intent = new Intent(HomeMenuActivity.this, SearchResultsActivity.class);
+        intent.putExtra("search_query", query);
         startActivity(intent);
     }
 
