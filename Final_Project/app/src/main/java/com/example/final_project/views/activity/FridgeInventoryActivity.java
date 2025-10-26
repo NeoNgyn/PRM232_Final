@@ -17,6 +17,7 @@ import android.net.Uri;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -54,7 +55,8 @@ public class FridgeInventoryActivity extends AppCompatActivity implements Invent
     private Button btnFilterAll, btnFilterNearExpiry;
     private com.google.android.material.button.MaterialButton btnMenuNav;
     private com.google.android.material.button.MaterialButton btnFridgeNav;
-    private com.google.android.material.button.MaterialButton btnLogout;
+    // private com.google.android.material.button.MaterialButton btnLogout; // Commented out - moved to Home Menu Activity Avatar Menu
+    private CardView headerCardView;
 
     private InventoryAdapter inventoryAdapter;
     private List<FoodItem> foodList;
@@ -80,6 +82,7 @@ public class FridgeInventoryActivity extends AppCompatActivity implements Invent
     }
 
     private void initViews() {
+        headerCardView = findViewById(R.id.headerCardView);
         recyclerInventory = findViewById(R.id.recyclerInventory);
         etSearch = findViewById(R.id.etSearch);
         btnBack = findViewById(R.id.btnBack);
@@ -89,9 +92,12 @@ public class FridgeInventoryActivity extends AppCompatActivity implements Invent
         tvNearExpiry = findViewById(R.id.tvNearExpiry);
         btnMenuNav = findViewById(R.id.btnMenuNav);
         btnFridgeNav = findViewById(R.id.btnFridgeNav);
-        btnLogout = findViewById(R.id.btnLogout);
+        // btnLogout = findViewById(R.id.btnLogout); // Commented out - moved to Home Menu Activity Avatar Menu
         btnFilterAll = findViewById(R.id.btnFilterAll);
         btnFilterNearExpiry = findViewById(R.id.btnFilterNearExpiry);
+
+        // Note: Removed bringToFront() as it causes header to appear at bottom in LinearLayout
+        // The header elevation in XML (8dp) is sufficient to keep it above other views
     }
 
     private void setupRecyclerView() {
@@ -326,8 +332,8 @@ public class FridgeInventoryActivity extends AppCompatActivity implements Invent
             Toast.makeText(this, "You are already on Fridge page", Toast.LENGTH_SHORT).show();
         });
 
-        // Logout button
-        btnLogout.setOnClickListener(v -> showLogoutConfirmDialog());
+        // Logout button - Commented out, moved to Home Menu Activity Avatar Menu
+        // btnLogout.setOnClickListener(v -> showLogoutConfirmDialog());
     }
 
     /**
