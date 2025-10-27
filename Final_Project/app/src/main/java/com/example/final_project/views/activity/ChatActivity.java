@@ -186,6 +186,7 @@
 
 package com.example.final_project.views.activity;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler; // Thêm import
 import android.os.Looper;  // Thêm import
@@ -238,6 +239,12 @@ public class ChatActivity extends AppCompatActivity implements ChatAdapter.OnRec
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
+
+        ImageButton btnBack = findViewById(R.id.btnBack);
+        btnBack.setOnClickListener(v -> {
+            Intent intent = new Intent(ChatActivity.this, HomeMenuActivity.class);
+            startActivity(intent);
+        });
 
         // --- Ánh xạ các view ---
         recyclerViewChat = findViewById(R.id.recyclerViewChat);
@@ -358,8 +365,9 @@ public class ChatActivity extends AppCompatActivity implements ChatAdapter.OnRec
             databaseExecutor.execute(() -> { // Lấy dữ liệu tủ lạnh trên luồng nền
                 try {
                     FoodItemViewModel foodViewModel = new FoodItemViewModel();
-                    String userId = "2"; // Lấy userId hiện tại
-                    List<FoodItem> foodItems = foodViewModel.getFoodItemsByUserId(userId);
+                    String currentUserId = UserSessionManager.getInstance(ChatActivity.this).getCurrentUserId();
+//                    String userId = "2"; // Lấy userId hiện tại
+                    List<FoodItem> foodItems = foodViewModel.getFoodItemsByUserId(currentUserId);
 
                     mainHandler.post(() -> { // Quay lại luồng chính để xử lý kết quả
                         if (foodItems == null || foodItems.isEmpty()) {
