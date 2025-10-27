@@ -13,6 +13,7 @@ import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -94,6 +95,14 @@ public class HomeMenuActivity extends AppCompatActivity {
         FloatingActionButton btnCamera = findViewById(R.id.btn_camera);
         btnCamera.setOnClickListener(v -> {
             Intent intent = new Intent(HomeMenuActivity.this, CameraActivity.class);
+            startActivity(intent);
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+        });
+
+        LinearLayout btnAI = findViewById(R.id.btn_ai);
+
+        btnAI.setOnClickListener(v -> {
+            Intent intent = new Intent(HomeMenuActivity.this, ChatActivity.class);
             startActivity(intent);
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
         });
