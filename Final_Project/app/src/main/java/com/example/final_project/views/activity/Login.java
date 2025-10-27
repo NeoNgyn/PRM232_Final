@@ -117,15 +117,26 @@ public class Login extends AppCompatActivity {
 
         // DEBUG automatic test: try sample users when running debug build
         if (BuildConfig.DEBUG) {
+            // Add debug button to test database
+//            TextView tvDebug = new TextView(this);
+//            tvDebug.setText("🔍 TEST DATABASE");
+//            tvDebug.setTextColor(Color.RED);
+//            tvDebug.setPadding(20, 20, 20, 20);
+//            tvDebug.setOnClickListener(v -> {
+//                Intent debugIntent = new Intent(Login.this, DatabaseTestActivity.class);
+//                startActivity(debugIntent);
+//            });
+//            ((android.view.ViewGroup) tvErrorMessage.getParent()).addView(tvDebug);
+
             ExecutorService debugExec = Executors.newSingleThreadExecutor();
             debugExec.execute(() -> {
                 try {
                     Thread.sleep(500); // slight delay to let UI settle
                 } catch (InterruptedException ignored) {}
                 String[][] samples = {
-                    {"alice.j@example.com", "password123"},
-                    {"bob.smith@example.com", "securepass"},
-                    {"an.tran@example.com", "anpass456"}
+                    {"an@gmail.com", "hashed_pw_1"},
+                    {"hoa@gmail.com", "hashed_pw_2"},
+                    {"khang@gmail.com", "hashed_pw_3"}
                 };
                 for (String[] s : samples) {
                     int res = checkLoginResultCode(s[0], s[1]);
@@ -139,43 +150,59 @@ public class Login extends AppCompatActivity {
             final String email = etEmail.getText().toString().trim();
             final String password = etPassword.getText().toString().trim();
 
+            Log.i(TAG, "═══════════════════════════════════════");
+            Log.i(TAG, "LOGIN BUTTON CLICKED");
+            Log.i(TAG, "Email: [" + email + "]");
+            Log.i(TAG, "Password: [" + password + "] (length=" + password.length() + ")");
+            Log.i(TAG, "═══════════════════════════════════════");
+
             tvErrorMessage.setVisibility(View.GONE);
             btnLogin.setEnabled(false);
 
             ExecutorService executor = Executors.newSingleThreadExecutor();
             executor.execute(() -> {
                 int result = checkLoginResultCode(email, password);
-                
+                Log.i(TAG, "Login result code: " + result);
+
                 // If login succeeded, fetch and save user session on background thread before navigating
                 if (result == LOGIN_SUCCESS) {
+                    Log.i(TAG, "Fetching user session...");
                     result = fetchAndSaveUserSession(email) ? LOGIN_SUCCESS : LOGIN_ERROR;
+                    Log.i(TAG, "Session fetch result: " + (result == LOGIN_SUCCESS ? "SUCCESS" : "FAILED"));
                 }
                 
                 final int finalResult = result;
                 runOnUiThread(() -> {
                     btnLogin.setEnabled(true);
+                    Log.i(TAG, "Processing UI for result code: " + finalResult);
                     switch (finalResult) {
                         case LOGIN_SUCCESS:
+                            Log.i(TAG, "✅ LOGIN SUCCESS - Navigating to HomeMenuActivity");
                             Intent intent = new Intent(Login.this, HomeMenuActivity.class);
                             Toast.makeText(Login.this, "Login successfully!", Toast.LENGTH_SHORT).show();
                             startActivity(intent);
                             finish();
                             break;
                         case LOGIN_NO_CONNECTION:
+                            Log.e(TAG, "❌ LOGIN FAILED - No database connection");
                             tvErrorMessage.setText("Không thể kết nối cơ sở dữ liệu. Vui lòng kiểm tra cấu hình.");
                             tvErrorMessage.setVisibility(View.VISIBLE);
                             break;
                         case LOGIN_NO_USER:
+                            Log.w(TAG, "❌ LOGIN FAILED - User not found");
                             tvErrorMessage.setText("Email không tồn tại.");
                             tvErrorMessage.setVisibility(View.VISIBLE);
                             break;
                         case LOGIN_WRONG_PASSWORD:
+                            Log.w(TAG, "❌ LOGIN FAILED - Wrong password");
                             tvErrorMessage.setText("Sai mật khẩu.");
                             tvErrorMessage.setVisibility(View.VISIBLE);
                             break;
                         default:
+                            Log.e(TAG, "❌ LOGIN FAILED - Unknown error");
                             tvErrorMessage.setText("Đăng nhập thất bại. Vui lòng thử lại.");
                             tvErrorMessage.setVisibility(View.VISIBLE);
+                            break;
                     }
                 });
             });
@@ -218,21 +245,22 @@ public class Login extends AppCompatActivity {
                             Log.e(TAG, "No password stored for email=" + email);
                             return LOGIN_ERROR;
                         }
+
+                        // Trim whitespace from DB password
                         dbPassword = dbPassword.trim();
-                        if (dbPassword.startsWith("\"") && dbPassword.endsWith("\"")) {
-                            dbPassword = dbPassword.substring(1, dbPassword.length()-1);
-                        }
-                        if (dbPassword.startsWith("'") && dbPassword.endsWith("'")) {
-                            dbPassword = dbPassword.substring(1, dbPassword.length()-1);
-                        }
-                        dbPassword = dbPassword.replaceAll("\\\\", "");
-                        dbPassword = dbPassword.replaceAll("[^\\x20-\\x7E]", "");
-                        // So sánh trực tiếp với mật khẩu nhập vào
-                        if (password.equals(dbPassword)) {
-                            Log.d(TAG, "Login attempt for " + email + " result=true");
+                        String inputPassword = password.trim();
+
+                        // Log for debugging
+                        Log.d(TAG, "Password comparison:");
+                        Log.d(TAG, "  Input: [" + inputPassword + "] (length=" + inputPassword.length() + ")");
+                        Log.d(TAG, "  DB:    [" + dbPassword + "] (length=" + dbPassword.length() + ")");
+
+                        // Direct comparison
+                        if (inputPassword.equals(dbPassword)) {
+                            Log.d(TAG, "Login attempt for " + email + " result=SUCCESS");
                             return LOGIN_SUCCESS;
                         } else {
-                            Log.d(TAG, "Login attempt for " + email + " result=false");
+                            Log.d(TAG, "Login attempt for " + email + " result=WRONG_PASSWORD");
                             return LOGIN_WRONG_PASSWORD;
                         }
                     } else {

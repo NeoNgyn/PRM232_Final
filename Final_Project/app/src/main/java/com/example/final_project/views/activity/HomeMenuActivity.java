@@ -63,6 +63,7 @@ public class HomeMenuActivity extends AppCompatActivity {
     private ImageView imgAvatar;
     private ImageView imgSearchIcon;
     private EditText etSearch;
+    private TextView tvGreeting;
 
     // Lưu padding-top gốc của header để không cộng dồn khi onResume
     private int headerOriginalPaddingTop = -1;
@@ -97,10 +98,11 @@ public class HomeMenuActivity extends AppCompatActivity {
         });
 
         fabAddMenu = findViewById(R.id.fabAddMenu);
-        fabAddMenu.setOnClickListener(v -> {
-            Intent intent = new Intent(HomeMenuActivity.this, CreateMenuActivity.class);
-            startActivity(intent);
-        });
+        fabAddMenu.setOnClickListener(v -> showCreateMenu(v));
+
+        // Initialize greeting TextView and set user name
+        tvGreeting = findViewById(R.id.tvGreeting);
+        updateGreeting();
 
         // Initialize navigation buttons
         btnGoToFridge = findViewById(R.id.btnGoToFridge);
@@ -176,6 +178,21 @@ public class HomeMenuActivity extends AppCompatActivity {
             result = getResources().getDimensionPixelSize(resourceId);
         }
         return result;
+    }
+
+    /**
+     * Update greeting message with user's name
+     */
+    private void updateGreeting() {
+        if (tvGreeting != null) {
+            String userName = UserSessionManager.getInstance(this).getCurrentUserName();
+            if (userName != null && !userName.isEmpty()) {
+                tvGreeting.setText("Xin chào, " + userName);
+            } else {
+                // Fallback to generic greeting if name is not available
+                tvGreeting.setText("Xin chào");
+            }
+        }
     }
 
     private void setupTodayMenusRecyclerView() {
@@ -392,43 +409,62 @@ public class HomeMenuActivity extends AppCompatActivity {
     private void loadRecentRecipesFromDatabase() {
         dbExecutor.execute(() -> {
             List<RecipeInMenu> loadedRecentRecipes = new ArrayList<>();
-            try (Connection conn = DatabaseConnection.getConnection()) {
-                if (conn == null) throw new SQLException("DB connection is null");
-                String sql =
-                        "SELECT " +
-                        "    m.menu_id," +
-                        "    m.menu_name," +
-                        "    r.recipe_id," +
-                        "    r.name AS recipe_name," +
-                        "    r.instruction," +
-                        "    r.nutrition," +
-                        "    r.image_url," +
-                        "    m.from_date," +
-                        "    m.to_date " +
-                        "FROM RecipeInMenu rim " +
-                        "JOIN Menu m ON rim.menu_id = m.menu_id " +
-                        "JOIN Recipe r ON rim.recipe_id = r.recipe_id " +
-                        "ORDER BY  rim.recipeMenu_id DESC;";
-                try (PreparedStatement stmt = conn.prepareStatement(sql); ResultSet rs = stmt.executeQuery()) {
-                    while (rs.next()) {
-                        Recipe recipe = new Recipe();
-                        recipe.setRecipeId(rs.getString("recipe_id"));
-                        recipe.setName(rs.getString("recipe_name"));
-                        recipe.setInstruction(rs.getString("instruction"));
-                        recipe.setNutrition(rs.getString("nutrition"));
-                        recipe.setImageUrl(rs.getString("image_url"));
-                        RecipeInMenu rim = new RecipeInMenu();
-                        rim.setRecipe(recipe);
-                        // Nếu muốn hiển thị thông tin menu, có thể tạo đối tượng Menu và set vào rim
-                        loadedRecentRecipes.add(rim);
-                    }
+            try {
+                // Get current user ID from session
+                String currentUserId = UserSessionManager.getInstance(HomeMenuActivity.this).getCurrentUserId();
+                if (currentUserId == null || currentUserId.isEmpty()) {
+                    android.util.Log.w("HomeMenuActivity", "User not logged in, skipping recent recipes load");
+                    return;
                 }
-                runOnUiThread(() -> {
-                    recentRecipeList.clear();
-                    recentRecipeList.addAll(loadedRecentRecipes);
-                    recentRecipeAdapter.notifyDataSetChanged();
-                });
+
+                try (Connection conn = DatabaseConnection.getConnection()) {
+                    if (conn == null) throw new SQLException("DB connection is null");
+
+                    // Updated SQL: Filter by user_id and order by update_at/create_at DESC to show most recent
+                    String sql =
+                            "SELECT " +
+                            "    r.recipe_id," +
+                            "    r.name AS recipe_name," +
+                            "    r.instruction," +
+                            "    r.nutrition," +
+                            "    r.image_url," +
+                            "    r.create_at," +
+                            "    r.update_at " +
+                            "FROM Recipe r " +
+                            "WHERE r.user_id = ? " +
+                            "ORDER BY COALESCE(r.update_at, r.create_at) DESC " +
+                            "LIMIT 10";
+
+                    try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                        stmt.setString(1, currentUserId);
+                        try (ResultSet rs = stmt.executeQuery()) {
+                            while (rs.next()) {
+                                Recipe recipe = new Recipe();
+                                recipe.setRecipeId(rs.getString("recipe_id"));
+                                recipe.setName(rs.getString("recipe_name"));
+                                recipe.setInstruction(rs.getString("instruction"));
+                                recipe.setNutrition(rs.getString("nutrition"));
+                                recipe.setImageUrl(rs.getString("image_url"));
+
+                                RecipeInMenu rim = new RecipeInMenu();
+                                rim.setRecipe(recipe);
+                                loadedRecentRecipes.add(rim);
+
+                                android.util.Log.d("HomeMenuActivity", "Loaded recent recipe: " + recipe.getName());
+                            }
+                        }
+                    }
+
+                    android.util.Log.d("HomeMenuActivity", "Total recent recipes loaded: " + loadedRecentRecipes.size());
+
+                    runOnUiThread(() -> {
+                        recentRecipeList.clear();
+                        recentRecipeList.addAll(loadedRecentRecipes);
+                        recentRecipeAdapter.notifyDataSetChanged();
+                    });
+                }
             } catch (Exception e) {
+                android.util.Log.e("HomeMenuActivity", "Error loading recent recipes", e);
                 e.printStackTrace();
                 runOnUiThread(() -> Toast.makeText(HomeMenuActivity.this, "Error loading recent recipes.", Toast.LENGTH_SHORT).show());
             }
@@ -479,6 +515,35 @@ public class HomeMenuActivity extends AppCompatActivity {
                 runOnUiThread(() -> onError.accept(e.getMessage()));
             }
         });
+    }
+
+    /**
+     * Show create menu popup with options for Create Menu and Create Recipe
+     */
+    private void showCreateMenu(View anchor) {
+        PopupMenu popup = new PopupMenu(this, anchor);
+        MenuInflater inflater = popup.getMenuInflater();
+        inflater.inflate(R.menu.menu_create_options, popup.getMenu());
+
+        popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                if (item.getItemId() == R.id.action_create_menu) {
+                    // Navigate to Create Menu Activity
+                    Intent intent = new Intent(HomeMenuActivity.this, CreateMenuActivity.class);
+                    startActivity(intent);
+                    return true;
+                } else if (item.getItemId() == R.id.action_create_recipe) {
+                    // Navigate to Create Recipe Activity
+                    Intent intent = new Intent(HomeMenuActivity.this, CreateRecipeActivity.class);
+                    startActivity(intent);
+                    return true;
+                }
+                return false;
+            }
+        });
+
+        popup.show();
     }
 
     /**
@@ -573,14 +638,14 @@ public class HomeMenuActivity extends AppCompatActivity {
     }
 
     /**
-     * Perform logout: clear session and navigate to Login
+     * Perform logout: clear session and navigate to StartedScreen
      */
     private void performLogout() {
         // Clear user session
         UserSessionManager.getInstance(this).clearUserSession();
 
-        // Navigate to Login activity
-        Intent intent = new Intent(HomeMenuActivity.this, Login.class);
+        // Navigate to StartedScreen activity (first screen)
+        Intent intent = new Intent(HomeMenuActivity.this, StartedScreen.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();

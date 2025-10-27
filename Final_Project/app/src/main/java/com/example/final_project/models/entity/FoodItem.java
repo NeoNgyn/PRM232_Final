@@ -8,7 +8,6 @@ public class FoodItem {
     private int quantity;
     private Date expiryDate;
     private String imageUrl;
-    private String note;
     private Date createdAt;
     private Date updatedAt;
 
@@ -113,13 +112,5 @@ public class FoodItem {
 
     public void setUnit(Unit unit) {
         this.unit = unit;
-    }
-
-    public String getNote() {
-        return note;
-    }
-
-    public void setNote(String note) {
-        this.note = note;
     }
 }
