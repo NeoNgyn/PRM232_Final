@@ -13,6 +13,7 @@ import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -48,6 +49,7 @@ public class HomeMenuActivity extends AppCompatActivity {
     private RecyclerView recyclerViewTodayMenus;
     private RecyclerView recyclerViewUpcomingMenus;
     private RecyclerView recyclerViewRecentRecipes;
+    private android.widget.LinearLayout llRecentRecipesSection;
     private HomeMenuAdapter menuAdapter;
     private HomeMenuAdapter todayMenusAdapter;
     private HomeMenuAdapter upcomingMenusAdapter;
@@ -94,6 +96,14 @@ public class HomeMenuActivity extends AppCompatActivity {
         FloatingActionButton btnCamera = findViewById(R.id.btn_camera);
         btnCamera.setOnClickListener(v -> {
             Intent intent = new Intent(HomeMenuActivity.this, CameraActivity.class);
+            startActivity(intent);
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+        });
+
+        LinearLayout btnAI = findViewById(R.id.btn_ai);
+
+        btnAI.setOnClickListener(v -> {
+            Intent intent = new Intent(HomeMenuActivity.this, ChatActivity.class);
             startActivity(intent);
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
         });
@@ -277,6 +287,9 @@ public class HomeMenuActivity extends AppCompatActivity {
     }
 
     private void setupRecentRecipesRecyclerView() {
+        // Tìm container của section Recent Recipes để có thể ẩn/hiện
+        llRecentRecipesSection = findViewById(R.id.llRecentRecipesSection);
+
         recyclerViewRecentRecipes = findViewById(R.id.recyclerViewRecentRecipes);
         recyclerViewRecentRecipes.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
         recyclerViewRecentRecipes.setHasFixedSize(true);
@@ -292,6 +305,10 @@ public class HomeMenuActivity extends AppCompatActivity {
                             deleteRecipeInMenuFromDb(recipeInMenu, () -> {
                                 // Xóa khỏi danh sách hiển thị
                                 recentRecipeList.remove(position);
+
+                                // Ẩn section nếu không còn recipe nào
+                                updateRecentRecipesSectionVisibility();
+
                                 recentRecipeAdapter.notifyItemRemoved(position);
                                 Toast.makeText(HomeMenuActivity.this, "Đã xóa recipe khỏi database.", Toast.LENGTH_SHORT).show();
                             }, error -> {
@@ -317,36 +334,55 @@ public class HomeMenuActivity extends AppCompatActivity {
                 if (conn == null) throw new SQLException("DB connection is null");
                 String recipeMenuId = recipeInMenu.getRecipeMenuId();
                 String recipeId = recipeInMenu.getRecipe() != null ? recipeInMenu.getRecipe().getRecipeId() : null;
-                int affected = 0;
-                // Xóa khỏi RecipeInMenu trước
+
+                if (recipeId == null) {
+                    runOnUiThread(() -> onError.accept("Recipe ID is null"));
+                    return;
+                }
+
+                // Xóa theo thứ tự: Ingredient -> RecipeInMenu -> Recipe
+                // 1. Xóa khỏi Ingredient (foreign key constraint)
+                String sqlIngredient = "DELETE FROM Ingredient WHERE recipe_id = ?";
+                try (PreparedStatement stmt = conn.prepareStatement(sqlIngredient)) {
+                    stmt.setString(1, recipeId);
+                    int ingredientDeleted = stmt.executeUpdate();
+                    android.util.Log.d("HomeMenuActivity", "Deleted " + ingredientDeleted + " ingredients for recipe: " + recipeId);
+                }
+
+                // 2. Xóa khỏi RecipeInMenu (có thể không có nếu là standalone recipe)
                 if (recipeMenuId != null && !recipeMenuId.isEmpty()) {
                     String sql = "DELETE FROM RecipeInMenu WHERE recipeMenu_id = ?";
                     try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                         stmt.setString(1, recipeMenuId);
-                        affected = stmt.executeUpdate();
+                        int recipeInMenuDeleted = stmt.executeUpdate();
+                        android.util.Log.d("HomeMenuActivity", "Deleted " + recipeInMenuDeleted + " RecipeInMenu records");
                     }
-                } else if (recipeId != null) {
+                } else {
                     String sql = "DELETE FROM RecipeInMenu WHERE recipe_id = ?";
                     try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                         stmt.setString(1, recipeId);
-                        affected = stmt.executeUpdate();
+                        int recipeInMenuDeleted = stmt.executeUpdate();
+                        android.util.Log.d("HomeMenuActivity", "Deleted " + recipeInMenuDeleted + " RecipeInMenu records");
                     }
                 }
-                // Sau đó xóa khỏi Recipe
-                if (recipeId != null) {
-                    String sql = "DELETE FROM Recipe WHERE recipe_id = ?";
-                    try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                        stmt.setString(1, recipeId);
-                        stmt.executeUpdate();
-                    }
+
+                // 3. Xóa khỏi Recipe (đây là bước quan trọng nhất)
+                String sqlRecipe = "DELETE FROM Recipe WHERE recipe_id = ?";
+                int recipeDeleted = 0;
+                try (PreparedStatement stmt = conn.prepareStatement(sqlRecipe)) {
+                    stmt.setString(1, recipeId);
+                    recipeDeleted = stmt.executeUpdate();
+                    android.util.Log.d("HomeMenuActivity", "Deleted " + recipeDeleted + " Recipe records");
                 }
-                if (affected > 0) {
+
+                // Kiểm tra xem Recipe có bị xóa thành công không
+                if (recipeDeleted > 0) {
                     runOnUiThread(onSuccess);
                 } else {
-                    runOnUiThread(() -> onError.accept("Không tìm thấy hoặc xóa không thành công."));
+                    runOnUiThread(() -> onError.accept("Không tìm thấy recipe để xóa."));
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                android.util.Log.e("HomeMenuActivity", "Error deleting recipe", e);
                 runOnUiThread(() -> onError.accept(e.getMessage()));
             }
         });
@@ -482,6 +518,7 @@ public class HomeMenuActivity extends AppCompatActivity {
                         recentRecipeList.clear();
                         recentRecipeList.addAll(loadedRecentRecipes);
                         recentRecipeAdapter.notifyDataSetChanged();
+                        updateRecentRecipesSectionVisibility(); // Update visibility based on recipe count
                     });
                 }
             } catch (Exception e) {
@@ -670,5 +707,19 @@ public class HomeMenuActivity extends AppCompatActivity {
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();
+    }
+
+    /**
+     * Update Recent Recipes section visibility based on recipe count
+     * Hide section if no recipes, show if there are recipes
+     */
+    private void updateRecentRecipesSectionVisibility() {
+        if (llRecentRecipesSection != null) {
+            if (recentRecipeList == null || recentRecipeList.isEmpty()) {
+                llRecentRecipesSection.setVisibility(View.GONE);
+            } else {
+                llRecentRecipesSection.setVisibility(View.VISIBLE);
+            }
+        }
     }
 }

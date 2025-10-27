@@ -276,7 +276,7 @@ public class CameraActivity extends AppCompatActivity {
 
                 // Tạo retrofit instance
                 FoodApiService apiService = FoodApiClient.getClient().create(FoodApiService.class);
-                String token = "Bearer 9d885ef142b2caf972e4c5fa754624c44702aaae"; // ⚠️ Thay bằng token thật
+                String token = "Bearer d957fdf3a2bb0678ee005375658331a30e29fa59"; // ⚠️ Thay bằng token thật
 
                 // Gọi API
                 Call<LogMealResponse> call = apiService.identifyFood(token, imagePart);
@@ -322,6 +322,7 @@ public class CameraActivity extends AppCompatActivity {
 
         return compressedFile;
     }
+
 
 
     @Override

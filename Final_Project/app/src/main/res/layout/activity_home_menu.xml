@@ -149,6 +149,7 @@
 
             <!-- Mục Công thức gần đây -->
             <LinearLayout
+                android:id="@+id/llRecentRecipesSection"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
