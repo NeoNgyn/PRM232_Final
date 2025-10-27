@@ -358,8 +358,9 @@ public class ChatActivity extends AppCompatActivity implements ChatAdapter.OnRec
             databaseExecutor.execute(() -> { // Lấy dữ liệu tủ lạnh trên luồng nền
                 try {
                     FoodItemViewModel foodViewModel = new FoodItemViewModel();
-                    String userId = "2"; // Lấy userId hiện tại
-                    List<FoodItem> foodItems = foodViewModel.getFoodItemsByUserId(userId);
+                    String currentUserId = UserSessionManager.getInstance(ChatActivity.this).getCurrentUserId();
+                    //String userId = "2"; // Lấy userId hiện tại
+                    List<FoodItem> foodItems = foodViewModel.getFoodItemsByUserId(currentUserId);
 
                     mainHandler.post(() -> { // Quay lại luồng chính để xử lý kết quả
                         if (foodItems == null || foodItems.isEmpty()) {
