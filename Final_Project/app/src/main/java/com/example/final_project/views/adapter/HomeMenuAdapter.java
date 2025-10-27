@@ -76,10 +76,15 @@ public class HomeMenuAdapter extends RecyclerView.Adapter<HomeMenuAdapter.MenuVi
             context.startActivity(intent);
         });
 
-        // Item click listener to open RecipeListActivity
+        // Item click listener to open MenuDetailActivity (show menu details with recipes)
         holder.itemView.setOnClickListener(v -> {
-            android.content.Intent intent = new android.content.Intent(context, com.example.final_project.views.activity.RecipeListActivity.class);
+            android.content.Intent intent = new android.content.Intent(context, com.example.final_project.views.activity.MenuDetailActivity.class);
             intent.putExtra("menu_id", item.getMenuId());
+            intent.putExtra("menu_name", item.getName());
+            intent.putExtra("menu_description", item.getDesc());
+            intent.putExtra("menu_image_url", item.getImageName());
+            intent.putExtra("from_date", item.getFromDate());
+            intent.putExtra("to_date", item.getToDate());
             context.startActivity(intent);
         });
 
