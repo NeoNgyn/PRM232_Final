@@ -74,7 +74,33 @@ public class MenuDetailActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
 
         recipeList = new ArrayList<>();
-        recipeAdapter = new RecipeAdapter(recipeList);
+        recipeAdapter = new RecipeAdapter(recipeList, new RecipeAdapter.OnRecipeActionListener() {
+            @Override
+            public void onDeleteRecipe(RecipeInMenu recipeInMenu, int position) {
+                // Show confirmation dialog before deleting
+                new androidx.appcompat.app.AlertDialog.Builder(MenuDetailActivity.this)
+                        .setTitle("Xóa công thức")
+                        .setMessage("Bạn có chắc muốn xóa công thức \"" +
+                                   (recipeInMenu.getRecipe() != null ? recipeInMenu.getRecipe().getName() : "") +
+                                   "\" khỏi menu không?")
+                        .setPositiveButton("Xóa", (dialog, which) -> {
+                            deleteRecipeFromMenu(recipeInMenu, position);
+                        })
+                        .setNegativeButton("Hủy", null)
+                        .show();
+            }
+
+            @Override
+            public void onEditRecipe(RecipeInMenu recipeInMenu, int position) {
+                // Open CreateRecipeActivity in edit mode
+                if (recipeInMenu.getRecipe() != null) {
+                    Intent intent = new Intent(MenuDetailActivity.this, CreateRecipeActivity.class);
+                    intent.putExtra("recipe", (java.io.Serializable) recipeInMenu.getRecipe());
+                    intent.putExtra("menu_id", menuId);
+                    startActivity(intent);
+                }
+            }
+        });
         recyclerView.setAdapter(recipeAdapter);
 
         // Setup back button
@@ -358,6 +384,56 @@ public class MenuDetailActivity extends AppCompatActivity {
             } catch (Exception e) {
                 android.util.Log.e("MenuDetailActivity", "Error deleting menu", e);
                 runOnUiThread(() -> Toast.makeText(this, "❌ Lỗi khi xóa menu: " + e.getMessage(), Toast.LENGTH_LONG).show());
+            }
+        });
+    }
+
+    /**
+     * Delete recipe from menu (remove link in RecipeInMenu table)
+     */
+    private void deleteRecipeFromMenu(RecipeInMenu recipeInMenu, int position) {
+        if (recipeInMenu == null || recipeInMenu.getRecipe() == null) {
+            Toast.makeText(this, "❌ Lỗi: Recipe không hợp lệ", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String recipeId = recipeInMenu.getRecipe().getRecipeId();
+        String recipeName = recipeInMenu.getRecipe().getName();
+
+        android.util.Log.d("MenuDetailActivity", "Deleting recipe " + recipeId + " from menu " + menuId);
+        Toast.makeText(this, "Đang xóa công thức...", Toast.LENGTH_SHORT).show();
+
+        dbExecutor.execute(() -> {
+            try (Connection conn = DatabaseConnection.getConnection()) {
+                if (conn == null) {
+                    runOnUiThread(() -> Toast.makeText(this, "❌ Không thể kết nối database", Toast.LENGTH_SHORT).show());
+                    return;
+                }
+
+                // Delete link in RecipeInMenu table
+                String sql = "DELETE FROM RecipeInMenu WHERE recipe_id = ? AND menu_id = ?";
+                try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                    stmt.setString(1, recipeId);
+                    stmt.setString(2, menuId);
+                    int rowsDeleted = stmt.executeUpdate();
+
+                    runOnUiThread(() -> {
+                        if (rowsDeleted > 0) {
+                            // Remove from list and update UI
+                            recipeList.remove(position);
+                            recipeAdapter.notifyItemRemoved(position);
+
+                            Toast.makeText(this, "✅ Đã xóa công thức \"" + recipeName + "\" khỏi menu!", Toast.LENGTH_SHORT).show();
+                            android.util.Log.d("MenuDetailActivity", "Recipe removed from menu successfully");
+                        } else {
+                            Toast.makeText(this, "❌ Không tìm thấy công thức để xóa", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+
+            } catch (Exception e) {
+                android.util.Log.e("MenuDetailActivity", "Error deleting recipe from menu", e);
+                runOnUiThread(() -> Toast.makeText(this, "❌ Lỗi khi xóa: " + e.getMessage(), Toast.LENGTH_LONG).show());
             }
         });
     }
