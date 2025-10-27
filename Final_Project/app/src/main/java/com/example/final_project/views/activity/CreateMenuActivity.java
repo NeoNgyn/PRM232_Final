@@ -83,6 +83,24 @@ public class CreateMenuActivity extends AppCompatActivity {
         btnBack.setOnClickListener(v -> finish());
         btnAddRecipe.setOnClickListener(v -> showAvailableRecipesDialog());
 
+        // Add click listener to image view to allow changing image
+        imageMenu.setOnClickListener(v -> openImagePicker());
+        imageMenu.setOnLongClickListener(v -> {
+            // Long click to clear image
+            new AlertDialog.Builder(this)
+                    .setTitle("Xóa ảnh")
+                    .setMessage("Bạn có muốn xóa ảnh hiện tại không?")
+                    .setPositiveButton("Xóa", (dialog, which) -> {
+                        imageUri = null;
+                        existingImageUrl = null;
+                        imageMenu.setImageResource(R.drawable.ic_launcher_background);
+                        Toast.makeText(this, "Đã xóa ảnh", Toast.LENGTH_SHORT).show();
+                    })
+                    .setNegativeButton("Hủy", null)
+                    .show();
+            return true;
+        });
+
         // Setup date pickers
         etFromDate.setOnClickListener(v -> showDatePicker(etFromDate, "Select From Date"));
         etToDate.setOnClickListener(v -> showDatePicker(etToDate, "Select To Date"));
@@ -138,24 +156,32 @@ public class CreateMenuActivity extends AppCompatActivity {
                                 }
                                 
                                 if (imageUrl != null && !imageUrl.isEmpty()) {
-                                    try {
-                                        if (imageUrl.startsWith("content://") || imageUrl.startsWith("file://")) {
-                                            android.net.Uri uri = android.net.Uri.parse(imageUrl);
-                                            Glide.with(CreateMenuActivity.this)
-                                                    .load(uri)
-                                                    .placeholder(R.drawable.ic_launcher_background)
-                                                    .error(R.drawable.ic_launcher_background)
-                                                    .into(imageMenu);
-                                        } else {
+                                    // Check if it's a valid URL (Cloudinary, http, https, content, file)
+                                    if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://") ||
+                                        imageUrl.startsWith("content://") || imageUrl.startsWith("file://")) {
+                                        try {
                                             Glide.with(CreateMenuActivity.this)
                                                     .load(imageUrl)
                                                     .placeholder(R.drawable.ic_launcher_background)
                                                     .error(R.drawable.ic_launcher_background)
                                                     .into(imageMenu);
+                                            Log.d(TAG, "Loading image from URL: " + imageUrl);
+                                        } catch (Exception ex) {
+                                            Log.e(TAG, "Failed to load image from URL: " + imageUrl, ex);
+                                            imageMenu.setImageResource(R.drawable.ic_launcher_background);
+                                            Toast.makeText(CreateMenuActivity.this, "Unable to load existing image", Toast.LENGTH_SHORT).show();
                                         }
-                                    } catch (Exception ex) {
+                                    } else {
+                                        // Legacy local filename (e.g., 'diet_menu.jpg') - cannot load, show placeholder
+                                        Log.w(TAG, "Legacy local filename detected: " + imageUrl + ". Cannot load. Please upload new image.");
                                         imageMenu.setImageResource(R.drawable.ic_launcher_background);
+                                        Toast.makeText(CreateMenuActivity.this, "Ảnh cũ không khả dụng. Vui lòng tải ảnh mới!", Toast.LENGTH_LONG).show();
+                                        // Clear the existing URL so user must upload new one
+                                        existingImageUrl = null;
                                     }
+                                } else {
+                                    Log.d(TAG, "No image URL available");
+                                    imageMenu.setImageResource(R.drawable.ic_launcher_background);
                                 }
                             });
                         }
@@ -224,8 +250,11 @@ public class CreateMenuActivity extends AppCompatActivity {
 
                 Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
                 imageMenu.setImageBitmap(bitmap);
+                Toast.makeText(this, "Đã chọn ảnh mới", Toast.LENGTH_SHORT).show();
+                Log.d(TAG, "New image selected: " + imageUri.toString());
             } catch (IOException e) {
                 Log.e(TAG, "Error loading picked image", e);
+                Toast.makeText(this, "Lỗi khi tải ảnh: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             }
         }
     }
@@ -285,9 +314,11 @@ public class CreateMenuActivity extends AppCompatActivity {
         if (imageUri != null) {
             // New image selected, upload it
             Toast.makeText(this, "Uploading image...", Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "Uploading new image to Cloudinary...");
             CloudinaryHelper.uploadImage(this, imageUri, new CloudinaryHelper.UploadCallback() {
                 @Override
                 public void onSuccess(String newImageUrl) {
+                    Log.d(TAG, "Image uploaded successfully: " + newImageUrl);
                     menuToSave.setImageUrl(newImageUrl);
                     if (isEditMode) {
                         updateMenuInDb(menuToSave, dbSuccessAction, dbErrorAction);
@@ -297,22 +328,65 @@ public class CreateMenuActivity extends AppCompatActivity {
                 }
                 @Override
                 public void onError(String error) {
+                    Log.e(TAG, "Image upload failed: " + error);
                     Toast.makeText(CreateMenuActivity.this, "Image upload failed: " + error, Toast.LENGTH_SHORT).show();
-                    // Keep existing image if edit mode, or save without image
-                    menuToSave.setImageUrl(isEditMode ? existingImageUrl : "");
-                    if (isEditMode) {
-                        updateMenuInDb(menuToSave, dbSuccessAction, dbErrorAction);
-                    } else {
-                        insertMenuToDb(menuToSave, dbSuccessAction, dbErrorAction);
-                    }
+                    // Allow user to save without image or with old image
+                    new AlertDialog.Builder(CreateMenuActivity.this)
+                            .setTitle("Upload ảnh thất bại")
+                            .setMessage("Không thể upload ảnh. Bạn có muốn:\n\n1. Lưu menu không có ảnh\n2. Giữ ảnh cũ (nếu có)\n3. Hủy và thử lại")
+                            .setPositiveButton("Lưu không có ảnh", (dialog, which) -> {
+                                menuToSave.setImageUrl("");
+                                if (isEditMode) {
+                                    updateMenuInDb(menuToSave, dbSuccessAction, dbErrorAction);
+                                } else {
+                                    insertMenuToDb(menuToSave, dbSuccessAction, dbErrorAction);
+                                }
+                            })
+                            .setNeutralButton("Giữ ảnh cũ", (dialog, which) -> {
+                                if (isEditMode && existingImageUrl != null && !existingImageUrl.isEmpty()) {
+                                    // Only keep old image if it's a valid URL
+                                    if (existingImageUrl.startsWith("http://") || existingImageUrl.startsWith("https://")) {
+                                        menuToSave.setImageUrl(existingImageUrl);
+                                    } else {
+                                        menuToSave.setImageUrl("");
+                                    }
+                                } else {
+                                    menuToSave.setImageUrl("");
+                                }
+                                if (isEditMode) {
+                                    updateMenuInDb(menuToSave, dbSuccessAction, dbErrorAction);
+                                } else {
+                                    insertMenuToDb(menuToSave, dbSuccessAction, dbErrorAction);
+                                }
+                            })
+                            .setNegativeButton("Hủy", null)
+                            .show();
                 }
             });
         } else {
             // No new image selected
-            menuToSave.setImageUrl(isEditMode ? existingImageUrl : "");
+            Log.d(TAG, "No new image selected");
             if (isEditMode) {
+                // Keep existing image if valid, otherwise clear it
+                if (existingImageUrl != null && !existingImageUrl.isEmpty()) {
+                    // Only keep if it's a valid URL
+                    if (existingImageUrl.startsWith("http://") || existingImageUrl.startsWith("https://")) {
+                        menuToSave.setImageUrl(existingImageUrl);
+                        Log.d(TAG, "Keeping existing valid image URL: " + existingImageUrl);
+                    } else {
+                        // Legacy local filename - clear it
+                        menuToSave.setImageUrl("");
+                        Log.d(TAG, "Clearing legacy image URL: " + existingImageUrl);
+                    }
+                } else {
+                    menuToSave.setImageUrl("");
+                    Log.d(TAG, "No existing image URL");
+                }
                 updateMenuInDb(menuToSave, dbSuccessAction, dbErrorAction);
             } else {
+                // New menu without image
+                menuToSave.setImageUrl("");
+                Log.d(TAG, "Creating new menu without image");
                 insertMenuToDb(menuToSave, dbSuccessAction, dbErrorAction);
             }
         }
