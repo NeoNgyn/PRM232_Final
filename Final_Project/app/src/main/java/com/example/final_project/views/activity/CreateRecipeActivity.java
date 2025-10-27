@@ -52,6 +52,7 @@ import java.io.OutputStream;
 public class CreateRecipeActivity extends AppCompatActivity {
 
     private static final int PICK_IMAGE_REQUEST = 1;
+    private static final int REQUEST_ADD_FOOD_ITEM = 2;
 
     private EditText etRecipeName, etRecipeInstruction, etRecipeNutrition;
     private ImageView imageRecipePreview;
@@ -210,6 +211,19 @@ public class CreateRecipeActivity extends AppCompatActivity {
             }
             return false;
         });
+
+        // Auto-scroll when etIngredientAmount gets focus
+        etIngredientAmount.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus) {
+                // Post with delay to ensure keyboard is shown first
+                v.postDelayed(() -> {
+                    androidx.core.widget.NestedScrollView scrollView = findViewById(R.id.scrollContent);
+                    if (scrollView != null) {
+                        scrollView.smoothScrollTo(0, v.getBottom());
+                    }
+                }, 300);
+            }
+        });
     }
 
     @Override
@@ -337,6 +351,47 @@ public class CreateRecipeActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Check if user has any food items. If not, navigate to FridgeInventoryActivity to add food items.
+     * If yes, scroll to ingredient section.
+     */
+    private void checkAndNavigateToAddIngredient() {
+        if (foodItemIds.isEmpty()) {
+            // No food items available, need to add food items first
+            new androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setTitle("Chưa có Food Item")
+                    .setMessage("Bạn chưa có food item nào trong kho. Bạn có muốn thêm food item mới không?")
+                    .setPositiveButton("Thêm Food Item", (dialog, which) -> {
+                        // Navigate to FridgeInventoryActivity
+                        Intent intent = new Intent(this, FridgeInventoryActivity.class);
+                        intent.putExtra("from_create_recipe", true);
+                        startActivityForResult(intent, REQUEST_ADD_FOOD_ITEM);
+                    })
+                    .setNegativeButton("Hủy", null)
+                    .show();
+        } else {
+            // Food items available, scroll to ingredient section
+            androidx.core.widget.NestedScrollView scrollView = findViewById(R.id.scrollContent);
+            if (scrollView != null && spFoodItem != null) {
+                scrollView.post(() -> {
+                    scrollView.smoothScrollTo(0, spFoodItem.getTop());
+                });
+            }
+            // Focus on amount field
+            if (etIngredientAmount != null) {
+                etIngredientAmount.postDelayed(() -> {
+                    etIngredientAmount.requestFocus();
+                    // Show keyboard
+                    InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+                    if (imm != null) {
+                        imm.showSoftInput(etIngredientAmount, InputMethodManager.SHOW_IMPLICIT);
+                    }
+                }, 300);
+            }
+            Toast.makeText(this, "Vui lòng chọn food item và nhập số lượng", Toast.LENGTH_LONG).show();
+        }
+    }
+
     private void loadUnitsAndFoodItems() {
         // Load in background then populate spinners on UI thread
         dbExecutor.execute(() -> {
@@ -435,6 +490,7 @@ public class CreateRecipeActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+
         if (requestCode == PICK_IMAGE_REQUEST && resultCode == Activity.RESULT_OK && data != null && data.getData() != null) {
             imageUri = data.getData();
             android.util.Log.d("CreateRecipeActivity", "Image selected: " + imageUri.toString());
@@ -491,8 +547,28 @@ public class CreateRecipeActivity extends AppCompatActivity {
                 // Show placeholder on error
                 imageRecipePreview.setImageResource(R.drawable.ic_food_placeholder);
             }
+        } else if (requestCode == REQUEST_ADD_FOOD_ITEM && resultCode == Activity.RESULT_OK) {
+            // User just added food items, reload the food items list
+            Toast.makeText(this, "Food item đã được thêm! Bây giờ bạn có thể chọn để thêm vào recipe.", Toast.LENGTH_LONG).show();
+            // Reload food items from database
+            loadUnitsAndFoodItems();
+            // After reload, scroll to ingredient section
+            spFoodItem.postDelayed(() -> {
+                androidx.core.widget.NestedScrollView scrollView = findViewById(R.id.scrollContent);
+                if (scrollView != null && spFoodItem != null) {
+                    scrollView.smoothScrollTo(0, spFoodItem.getTop());
+                }
+                // Focus on amount field
+                if (etIngredientAmount != null) {
+                    etIngredientAmount.requestFocus();
+                    InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+                    if (imm != null) {
+                        imm.showSoftInput(etIngredientAmount, InputMethodManager.SHOW_IMPLICIT);
+                    }
+                }
+            }, 500);
         } else {
-            android.util.Log.w("CreateRecipeActivity", "Image selection cancelled or invalid");
+            android.util.Log.w("CreateRecipeActivity", "Activity result cancelled or invalid");
         }
     }
 
@@ -560,6 +636,21 @@ public class CreateRecipeActivity extends AppCompatActivity {
         String nutrition = etRecipeNutrition.getText().toString().trim();
         if (name.isEmpty() || instruction.isEmpty()) {
             Toast.makeText(this, "Please fill all required fields", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Validate: Must have at least one ingredient
+        if (ingredientsList.isEmpty()) {
+            // Show dialog to prompt user to add ingredients
+            new androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setTitle("Chưa có Ingredient")
+                    .setMessage("Recipe cần có ít nhất 1 ingredient. Bạn có muốn thêm ingredient không?")
+                    .setPositiveButton("Thêm Ingredient", (dialog, which) -> {
+                        // Check if there are any food items available
+                        checkAndNavigateToAddIngredient();
+                    })
+                    .setNegativeButton("Hủy", null)
+                    .show();
             return;
         }
 
