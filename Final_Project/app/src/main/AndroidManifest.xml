@@ -28,7 +28,7 @@
             android:exported="false"
             android:screenOrientation="portrait" />
         <activity
-            android:name=".views.activity.HomeMenuActivity"
+            android:name=".views.activity.StartedScreen"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -40,6 +40,8 @@
         <activity android:name=".MainActivity" android:exported="true" />
 
         <!--  Add-ons  -->
+        <activity android:name=".views.activity.HomeMenuActivity" />
+        <activity android:name=".views.activity.MenuDetailActivity" />
         <activity android:name=".views.activity.CreateMenuActivity" />
         <activity android:name=".views.activity.CreateRecipeActivity" />
         <activity android:name=".views.activity.RecipeListActivity" />
@@ -50,7 +52,8 @@
         <!-- 🔹 Thêm dòng này -->
         <activity android:name=".views.activity.FridgeInventoryActivity" />
         <activity android:name=".views.activity.SearchResultsActivity" />
-        <activity android:name=".views.activity.StartedScreen" />
+        <!-- DatabaseTestActivity removed - debug tool only -->
+<!--        <activity android:name=".views.activity.StartedScreen" />-->
     </application>
 
 
