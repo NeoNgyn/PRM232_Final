@@ -366,7 +366,7 @@ public class ChatActivity extends AppCompatActivity implements ChatAdapter.OnRec
                 try {
                     FoodItemViewModel foodViewModel = new FoodItemViewModel();
                     String currentUserId = UserSessionManager.getInstance(ChatActivity.this).getCurrentUserId();
-//                    String userId = "2"; // Lấy userId hiện tại
+                    //String userId = "2"; // Lấy userId hiện tại
                     List<FoodItem> foodItems = foodViewModel.getFoodItemsByUserId(currentUserId);
 
                     mainHandler.post(() -> { // Quay lại luồng chính để xử lý kết quả

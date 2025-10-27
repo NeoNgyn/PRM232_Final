@@ -11,7 +11,7 @@ public class Recipe implements java.io.Serializable {
     private String imageUrl;
     private Date createdAt;
     private Date updatedAt;
-
+    private String userId;
     // Quan hệ 1 - N
     private List<Ingredient> ingredients;
 
@@ -29,7 +29,13 @@ public class Recipe implements java.io.Serializable {
     }
 
     // Getter / Setter
+    public String getUserId() {
+        return userId;
+    }
 
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
     public String getRecipeId() {
         return recipeId;
     }

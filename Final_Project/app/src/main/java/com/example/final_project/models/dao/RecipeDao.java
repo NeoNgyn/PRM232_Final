@@ -27,7 +27,7 @@ public class RecipeDao {
             conn.setAutoCommit(false);
 
             // 2. Insert vào bảng `Recipe`
-            String recipeSql = "INSERT INTO Recipe (recipe_id, name, instruction, nutrition, create_at, update_at) VALUES (?, ?, ?, ?, ?, ?)"; // <-- Thêm nutrition
+            String recipeSql = "INSERT INTO Recipe (recipe_id, name, instruction, nutrition, create_at, update_at, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)"; // <-- Thêm nutrition
             try (PreparedStatement recipeStmt = conn.prepareStatement(recipeSql)) {
                 recipeStmt.setString(1, recipe.getRecipeId());
                 recipeStmt.setString(2, recipe.getName());
@@ -35,6 +35,7 @@ public class RecipeDao {
                 recipeStmt.setString(4, recipe.getNutrition());
                 recipeStmt.setTimestamp(5, new java.sql.Timestamp(recipe.getCreatedAt().getTime()));
                 recipeStmt.setTimestamp(6, new java.sql.Timestamp(recipe.getUpdatedAt().getTime()));
+                recipeStmt.setString(7, recipe.getUserId());
                 recipeStmt.executeUpdate();
             }
 
