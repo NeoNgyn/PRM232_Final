@@ -15,17 +15,25 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.final_project.R;
 import com.example.final_project.models.entity.Menu;
+import com.example.final_project.models.entity.Recipe;
 import com.example.final_project.utils.DatabaseConnection;
 import com.example.final_project.utils.UserSessionManager;
 import com.example.final_project.utils.CloudinaryHelper;
 import com.example.final_project.utils.DBMigrationHelper;
 import com.bumptech.glide.Glide;
+
+import androidx.appcompat.app.AlertDialog;
+
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Calendar;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import android.app.DatePickerDialog;
 import android.util.Log;
 import java.util.concurrent.ExecutorService;
@@ -41,12 +49,17 @@ public class CreateMenuActivity extends AppCompatActivity {
     private static final int PICK_IMAGE_REQUEST = 1;
     private EditText etMenuName, etMenuDescription, etFromDate, etToDate;
     private ImageView imageMenu;
+    private Button btnAddRecipe;
     private Uri imageUri;
     private String existingMenuId = null;
     private String existingImageUrl = null;
     private boolean isEditMode = false;
     private static final String TAG = "CreateMenuActivity";
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+
+    // Track selected recipes to add to menu
+    private List<Recipe> selectedRecipes = new ArrayList<>();
+    private Set<String> selectedRecipeIds = new HashSet<>();
 
     private final ExecutorService dbExecutor = Executors.newSingleThreadExecutor();
 
@@ -63,21 +76,12 @@ public class CreateMenuActivity extends AppCompatActivity {
         Button btnUploadImage = findViewById(R.id.btnUploadImage);
         Button btnSaveMenu = findViewById(R.id.btnSaveMenu);
         ImageButton btnBack = findViewById(R.id.btnBack);
-        Button btnAddRecipe = findViewById(R.id.btnAddRecipe);
+        btnAddRecipe = findViewById(R.id.btnAddRecipe);
 
         btnUploadImage.setOnClickListener(v -> openImagePicker());
         btnSaveMenu.setOnClickListener(v -> saveMenu());
         btnBack.setOnClickListener(v -> finish());
-        btnAddRecipe.setOnClickListener(v -> {
-            // Only allow adding a recipe if we are editing an existing (saved) menu
-            if (isEditMode && existingMenuId != null && !existingMenuId.isEmpty()) {
-                Intent intent = new Intent(CreateMenuActivity.this, CreateRecipeActivity.class);
-                intent.putExtra("menu_id", existingMenuId);
-                startActivity(intent);
-            } else {
-                Toast.makeText(CreateMenuActivity.this, "Please save the menu first before adding recipes.", Toast.LENGTH_SHORT).show();
-            }
-        });
+        btnAddRecipe.setOnClickListener(v -> showAvailableRecipesDialog());
 
         // Setup date pickers
         etFromDate.setOnClickListener(v -> showDatePicker(etFromDate, "Select From Date"));
@@ -212,7 +216,7 @@ public class CreateMenuActivity extends AppCompatActivity {
             try {
                 // Persist read permission so the app can read this URI later (important for content:// URIs)
                 try {
-                    final int takeFlags = data.getFlags() & (Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+                    final int takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION;
                     getContentResolver().takePersistableUriPermission(imageUri, takeFlags);
                 } catch (SecurityException se) {
                     Log.w(TAG, "Could not take persistable uri permission", se);
@@ -314,6 +318,93 @@ public class CreateMenuActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Show dialog with available recipes (not in any menu yet)
+     */
+    private void showAvailableRecipesDialog() {
+        dbExecutor.execute(() -> {
+            List<Recipe> availableRecipes = new ArrayList<>();
+            try (Connection conn = DatabaseConnection.getConnection()) {
+                if (conn == null) throw new SQLException("DB connection is null");
+
+                String currentUserId = UserSessionManager.getInstance(this).getCurrentUserId();
+
+                // Get recipes that are NOT in any menu yet
+                String sql = "SELECT r.recipe_id, r.name, r.image_url, r.instruction, r.nutrition " +
+                            "FROM Recipe r " +
+                            "WHERE r.user_id = ? " +
+                            "AND r.recipe_id NOT IN (SELECT recipe_id FROM RecipeInMenu) " +
+                            "ORDER BY r.create_at DESC";
+
+                try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                    stmt.setString(1, currentUserId);
+                    try (ResultSet rs = stmt.executeQuery()) {
+                        while (rs.next()) {
+                            Recipe recipe = new Recipe();
+                            recipe.setRecipeId(rs.getString("recipe_id"));
+                            recipe.setName(rs.getString("name"));
+                            recipe.setImageUrl(rs.getString("image_url"));
+                            recipe.setInstruction(rs.getString("instruction"));
+                            recipe.setNutrition(rs.getString("nutrition"));
+                            availableRecipes.add(recipe);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error loading available recipes", e);
+                runOnUiThread(() -> Toast.makeText(this, "Error loading recipes: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                return;
+            }
+
+            runOnUiThread(() -> {
+                if (availableRecipes.isEmpty()) {
+                    Toast.makeText(this, "Không có recipe nào khả dụng. Hãy tạo recipe mới!", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                showRecipeSelectionDialog(availableRecipes);
+            });
+        });
+    }
+
+    /**
+     * Show dialog to select multiple recipes
+     */
+    private void showRecipeSelectionDialog(List<Recipe> recipes) {
+        String[] recipeNames = new String[recipes.size()];
+        boolean[] checkedItems = new boolean[recipes.size()];
+
+        for (int i = 0; i < recipes.size(); i++) {
+            recipeNames[i] = recipes.get(i).getName();
+            // Check if already selected
+            checkedItems[i] = selectedRecipeIds.contains(recipes.get(i).getRecipeId());
+        }
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Chọn Recipe để thêm vào Menu")
+                .setMultiChoiceItems(recipeNames, checkedItems, (dialog, which, isChecked) -> {
+                    Recipe recipe = recipes.get(which);
+                    if (isChecked) {
+                        if (!selectedRecipeIds.contains(recipe.getRecipeId())) {
+                            selectedRecipes.add(recipe);
+                            selectedRecipeIds.add(recipe.getRecipeId());
+                        }
+                    } else {
+                        selectedRecipes.removeIf(r -> r.getRecipeId().equals(recipe.getRecipeId()));
+                        selectedRecipeIds.remove(recipe.getRecipeId());
+                    }
+                })
+                .setPositiveButton("Xong", (dialog, which) -> {
+                    if (selectedRecipes.isEmpty()) {
+                        Toast.makeText(this, "Chưa chọn recipe nào", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(this, "Đã chọn " + selectedRecipes.size() + " recipe(s)", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton("Hủy", null)
+                .show();
+    }
+
     private void insertMenuToDb(Menu menu, Runnable onSuccess, Consumer<String> onError) {
         dbExecutor.execute(() -> {
             try (Connection conn = DatabaseConnection.getConnection()) {
@@ -377,6 +468,12 @@ public class CreateMenuActivity extends AppCompatActivity {
 
                     if (stmt.executeUpdate() <= 0) throw new SQLException("Insert failed");
                     menu.setMenuId(id);
+
+                    // After inserting menu, insert selected recipes into RecipeInMenu
+                    if (!selectedRecipes.isEmpty()) {
+                        insertRecipesIntoMenu(conn, id, selectedRecipes);
+                    }
+
                     runOnUiThread(onSuccess);
                 }
             } catch (Exception e) {
@@ -423,5 +520,44 @@ public class CreateMenuActivity extends AppCompatActivity {
                 runOnUiThread(() -> onError.accept(e.getMessage()));
             }
         });
+    }
+
+    /**
+     * Insert selected recipes into RecipeInMenu table
+     */
+    private void insertRecipesIntoMenu(Connection conn, String menuId, List<Recipe> recipes) throws SQLException {
+        String sql = "INSERT INTO RecipeInMenu (recipeMenu_id, menu_id, recipe_id) VALUES (?, ?, ?)";
+
+        for (Recipe recipe : recipes) {
+            // Generate recipeMenu_id
+            String recipeMenuId = generateRecipeMenuId(conn);
+
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setString(1, recipeMenuId);
+                stmt.setString(2, menuId);
+                stmt.setString(3, recipe.getRecipeId());
+                stmt.executeUpdate();
+                Log.d(TAG, "Inserted recipe " + recipe.getName() + " into menu " + menuId);
+            }
+        }
+    }
+
+    /**
+     * Generate unique recipeMenu_id
+     */
+    private String generateRecipeMenuId(Connection conn) throws SQLException {
+        // Find max numeric suffix and increment
+        try (PreparedStatement stmt = conn.prepareStatement(
+                "SELECT MAX(CAST(SUBSTRING(recipeMenu_id, 3) AS UNSIGNED)) AS maxnum FROM RecipeInMenu WHERE recipeMenu_id REGEXP '^RM[0-9]+$'")) {
+            try (ResultSet rs = stmt.executeQuery()) {
+                int max = 0;
+                if (rs.next()) {
+                    max = rs.getInt("maxnum");
+                    if (rs.wasNull()) max = 0;
+                }
+                int next = max + 1;
+                return String.format(Locale.US, "RM%03d", next);
+            }
+        }
     }
 }
