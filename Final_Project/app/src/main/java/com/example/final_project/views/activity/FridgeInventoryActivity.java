@@ -1,5 +1,6 @@
 package com.example.final_project.views.activity;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.os.Bundle;
 import android.text.Editable;
@@ -563,6 +564,12 @@ public class FridgeInventoryActivity extends AppCompatActivity implements Invent
                             loadFromDatabase();
                             dialog.dismiss();
                             Toast.makeText(this, isEditing ? "Cập nhật thành công!" : "Thêm thành công!", Toast.LENGTH_SHORT).show();
+
+                            // If came from CreateRecipeActivity, set result and finish
+                            if (!isEditing && getIntent().getBooleanExtra("from_create_recipe", false)) {
+                                setResult(Activity.RESULT_OK);
+                                finish();
+                            }
                         };
 
                         Consumer<String> dbErrorAction = error -> Toast.makeText(this, "Lỗi: " + error, Toast.LENGTH_LONG).show();
