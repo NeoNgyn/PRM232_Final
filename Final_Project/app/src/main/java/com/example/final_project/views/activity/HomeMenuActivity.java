@@ -428,12 +428,12 @@ public class HomeMenuActivity extends AppCompatActivity {
 
                                 java.sql.Date fromDate = rs.getDate("from_date");
                                 java.sql.Date toDate = rs.getDate("to_date");
-
+                                loadedAllList.add(item);
                                 // Chỉ hiển thị menu nằm trong khoảng from_date - to_date
                                 if (fromDate != null && toDate != null &&
                                     !currentDate.before(fromDate) && !currentDate.after(toDate)) {
                                     loadedTodayList.add(item);
-                                    loadedAllList.add(item); // Chỉ thêm vào danh sách tổng nếu hợp lệ
+                                     // Chỉ thêm vào danh sách tổng nếu hợp lệ
                                 }
                                 else if (fromDate != null && fromDate.after(currentDate)) {
                                     loadedUpcomingList.add(item);
