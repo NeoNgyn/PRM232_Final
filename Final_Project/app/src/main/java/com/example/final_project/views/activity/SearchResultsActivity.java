@@ -166,7 +166,7 @@ public class SearchResultsActivity extends AppCompatActivity {
             try (Connection conn = DatabaseConnection.getConnection()) {
                 if (conn == null) throw new SQLException("DB connection is null");
 
-                // Search for Menus
+                // Search for Menus - Only search by menu_name
                 String menuSql;
                 if (searchQuery.isEmpty()) {
                     // Show all menus when search is empty
@@ -175,10 +175,10 @@ public class SearchResultsActivity extends AppCompatActivity {
                             "WHERE user_id = ? " +
                             "ORDER BY create_at DESC";
                 } else {
-                    // Search with filter
+                    // Search only by menu_name (not description)
                     menuSql = "SELECT menu_id, menu_name, image_url, description, from_date, to_date " +
                             "FROM Menu " +
-                            "WHERE user_id = ? AND (LOWER(menu_name) LIKE ? OR LOWER(description) LIKE ?) " +
+                            "WHERE user_id = ? AND LOWER(menu_name) LIKE ? " +
                             "ORDER BY create_at DESC";
                 }
 
@@ -187,7 +187,6 @@ public class SearchResultsActivity extends AppCompatActivity {
                     if (!searchQuery.isEmpty()) {
                         String searchPattern = "%" + searchQuery.toLowerCase() + "%";
                         stmt.setString(2, searchPattern);
-                        stmt.setString(3, searchPattern);
                     }
 
                     try (ResultSet rs = stmt.executeQuery()) {
@@ -205,33 +204,35 @@ public class SearchResultsActivity extends AppCompatActivity {
                     }
                 }
 
-                // Search for Recipes
+                // Search for Recipes - Only search by recipe name
                 String recipeSql;
                 if (searchQuery.isEmpty()) {
-                    // Show all recipes when search is empty
-                    recipeSql = "SELECT DISTINCT r.recipe_id, r.name AS recipe_name, r.instruction, " +
-                            "r.nutrition, r.image_url " +
+                    // Load all recipes that belong to the current user (including those not in any menu)
+                    recipeSql = "SELECT r.recipe_id, r.name AS recipe_name, r.instruction, " +
+                            "r.nutrition, r.image_url, r.create_at " +
                             "FROM Recipe r " +
-                            "JOIN RecipeInMenu rim ON r.recipe_id = rim.recipe_id " +
-                            "JOIN Menu m ON rim.menu_id = m.menu_id " +
-                            "WHERE m.user_id = ? " +
-                            "ORDER BY r.recipe_id DESC";
+                            "WHERE r.user_id = ? " +
+                            "ORDER BY r.create_at DESC";
                 } else {
-                    // Search with filter
+                    // Search only by recipe name (not instruction)
+                    // Include recipes owned by the user or recipes that belong to menus owned by the user
                     recipeSql = "SELECT DISTINCT r.recipe_id, r.name AS recipe_name, r.instruction, " +
-                            "r.nutrition, r.image_url " +
+                            "r.nutrition, r.image_url, r.create_at " +
                             "FROM Recipe r " +
-                            "JOIN RecipeInMenu rim ON r.recipe_id = rim.recipe_id " +
-                            "JOIN Menu m ON rim.menu_id = m.menu_id " +
-                            "WHERE m.user_id = ? AND (LOWER(r.name) LIKE ? OR LOWER(r.instruction) LIKE ?) " +
-                            "ORDER BY r.recipe_id DESC";
+                            "LEFT JOIN RecipeInMenu rim ON r.recipe_id = rim.recipe_id " +
+                            "LEFT JOIN Menu m ON rim.menu_id = m.menu_id " +
+                            "WHERE (r.user_id = ? OR m.user_id = ?) AND LOWER(r.name) LIKE ? " +
+                            "ORDER BY r.create_at DESC";
                 }
 
                 try (PreparedStatement stmt = conn.prepareStatement(recipeSql)) {
-                    stmt.setString(1, currentUserId);
-                    if (!searchQuery.isEmpty()) {
+                    if (searchQuery.isEmpty()) {
+                        stmt.setString(1, currentUserId);
+                    } else {
+                        // params: 1 = r.user_id, 2 = m.user_id, 3 = searchPattern
+                        stmt.setString(1, currentUserId);
+                        stmt.setString(2, currentUserId);
                         String searchPattern = "%" + searchQuery.toLowerCase() + "%";
-                        stmt.setString(2, searchPattern);
                         stmt.setString(3, searchPattern);
                     }
 
@@ -243,6 +244,15 @@ public class SearchResultsActivity extends AppCompatActivity {
                             recipe.setInstruction(rs.getString("instruction"));
                             recipe.setNutrition(rs.getString("nutrition"));
                             recipe.setImageUrl(rs.getString("image_url"));
+                            // Map created_at if available (used for ordering)
+                            try {
+                                java.sql.Timestamp ts = rs.getTimestamp("create_at");
+                                if (ts != null) {
+                                    recipe.setCreatedAt(new java.util.Date(ts.getTime()));
+                                }
+                            } catch (SQLException ignored) {
+                                // If column missing for some reason, ignore safely
+                            }
 
                             RecipeInMenu rim = new RecipeInMenu();
                             rim.setRecipe(recipe);
@@ -312,4 +322,3 @@ public class SearchResultsActivity extends AppCompatActivity {
         }
     }
 }
-

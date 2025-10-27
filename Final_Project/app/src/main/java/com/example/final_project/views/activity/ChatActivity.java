@@ -205,6 +205,7 @@ import com.example.final_project.helper.GeminiApi;
 import com.example.final_project.models.entity.ChatMessage;
 import com.example.final_project.models.entity.FoodItem;
 import com.example.final_project.models.entity.RecipeData; // Thêm import cho RecipeData
+import com.example.final_project.utils.UserSessionManager;
 import com.example.final_project.viewmodels.FoodItemViewModel;
 import com.example.final_project.viewmodels.RecipeViewModel; // Thêm import cho RecipeViewModel
 import com.example.final_project.views.adapter.ChatAdapter;
@@ -284,8 +285,9 @@ public class ChatActivity extends AppCompatActivity implements ChatAdapter.OnRec
         databaseExecutor.execute(() -> { // Chạy trên luồng nền
             try {
                 FoodItemViewModel foodViewModel = new FoodItemViewModel();
-                String userId = "1"; // Lấy userId hiện tại (cần thay thế bằng logic lấy userId thực tế)
-                List<FoodItem> foodItems = foodViewModel.getFoodItemsByUserId(userId);
+                String currentUserId = UserSessionManager.getInstance(ChatActivity.this).getCurrentUserId();
+                //String userId = "1"; // Lấy userId hiện tại (cần thay thế bằng logic lấy userId thực tế)
+                List<FoodItem> foodItems = foodViewModel.getFoodItemsByUserId(currentUserId);
 
                 // Quay lại luồng chính để cập nhật UI
                 mainHandler.post(() -> {
@@ -484,8 +486,9 @@ public class ChatActivity extends AppCompatActivity implements ChatAdapter.OnRec
      */
     @Override
     public void onSaveRecipeClicked(RecipeData recipe) {
-        String userId = "2"; // Lấy userId hiện tại
-        recipeViewModel.saveRecipeToDatabase(recipe, userId);
+        String currentUserId = UserSessionManager.getInstance(ChatActivity.this).getCurrentUserId();
+        //String userId = "2"; // Lấy userId hiện tại
+        recipeViewModel.saveRecipeToDatabase(recipe, currentUserId);
         Toast.makeText(this, "Đã gửi yêu cầu lưu món: " + recipe.getTitle(), Toast.LENGTH_SHORT).show();
     }
 }

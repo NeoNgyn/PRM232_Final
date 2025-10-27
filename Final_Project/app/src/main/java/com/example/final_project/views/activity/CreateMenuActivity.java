@@ -6,6 +6,9 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.view.KeyEvent;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -13,19 +16,30 @@ import android.widget.ImageView;
 import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import com.example.final_project.R;
 import com.example.final_project.models.entity.Menu;
+import com.example.final_project.models.entity.Recipe;
 import com.example.final_project.utils.DatabaseConnection;
 import com.example.final_project.utils.UserSessionManager;
 import com.example.final_project.utils.CloudinaryHelper;
 import com.example.final_project.utils.DBMigrationHelper;
+import com.example.final_project.views.adapter.SelectedRecipeAdapter;
 import com.bumptech.glide.Glide;
+
+import androidx.appcompat.app.AlertDialog;
+
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Calendar;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import android.app.DatePickerDialog;
 import android.util.Log;
 import java.util.concurrent.ExecutorService;
@@ -41,12 +55,21 @@ public class CreateMenuActivity extends AppCompatActivity {
     private static final int PICK_IMAGE_REQUEST = 1;
     private EditText etMenuName, etMenuDescription, etFromDate, etToDate;
     private ImageView imageMenu;
+    private Button btnAddRecipe;
     private Uri imageUri;
     private String existingMenuId = null;
     private String existingImageUrl = null;
     private boolean isEditMode = false;
     private static final String TAG = "CreateMenuActivity";
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+
+    // Track selected recipes to add to menu
+    private List<Recipe> selectedRecipes = new ArrayList<>();
+    private Set<String> selectedRecipeIds = new HashSet<>();
+
+    // RecyclerView for selected recipes
+    private RecyclerView recyclerSelectedRecipes;
+    private SelectedRecipeAdapter selectedRecipeAdapter;
 
     private final ExecutorService dbExecutor = Executors.newSingleThreadExecutor();
 
@@ -63,20 +86,68 @@ public class CreateMenuActivity extends AppCompatActivity {
         Button btnUploadImage = findViewById(R.id.btnUploadImage);
         Button btnSaveMenu = findViewById(R.id.btnSaveMenu);
         ImageButton btnBack = findViewById(R.id.btnBack);
-        Button btnAddRecipe = findViewById(R.id.btnAddRecipe);
+        btnAddRecipe = findViewById(R.id.btnAddRecipe);
+
+        // Setup RecyclerView for selected recipes
+        recyclerSelectedRecipes = findViewById(R.id.recyclerRecipeInput);
+        recyclerSelectedRecipes.setLayoutManager(new LinearLayoutManager(this));
+        selectedRecipeAdapter = new SelectedRecipeAdapter(selectedRecipes, this::onRemoveRecipeClicked);
+        recyclerSelectedRecipes.setAdapter(selectedRecipeAdapter);
+
+        // --- NEW: Setup IME action listeners for Enter key handling ---
+        etMenuName.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_NEXT || (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
+                etMenuDescription.requestFocus();
+                return true;
+            }
+            return false;
+        });
+
+        etMenuDescription.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_NEXT || (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
+                findViewById(R.id.etMenuNote).requestFocus();
+                return true;
+            }
+            return false;
+        });
+
+        EditText etMenuNote = findViewById(R.id.etMenuNote);
+        if (etMenuNote != null) {
+            etMenuNote.setOnEditorActionListener((v, actionId, event) -> {
+                if (actionId == EditorInfo.IME_ACTION_DONE || (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
+                    // Hide keyboard when Done is pressed on Note field
+                    InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+                    if (imm != null && getCurrentFocus() != null) {
+                        imm.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
+                    }
+                    etMenuNote.clearFocus();
+                    return true;
+                }
+                return false;
+            });
+        }
 
         btnUploadImage.setOnClickListener(v -> openImagePicker());
         btnSaveMenu.setOnClickListener(v -> saveMenu());
         btnBack.setOnClickListener(v -> finish());
-        btnAddRecipe.setOnClickListener(v -> {
-            // Only allow adding a recipe if we are editing an existing (saved) menu
-            if (isEditMode && existingMenuId != null && !existingMenuId.isEmpty()) {
-                Intent intent = new Intent(CreateMenuActivity.this, CreateRecipeActivity.class);
-                intent.putExtra("menu_id", existingMenuId);
-                startActivity(intent);
-            } else {
-                Toast.makeText(CreateMenuActivity.this, "Please save the menu first before adding recipes.", Toast.LENGTH_SHORT).show();
-            }
+        btnAddRecipe.setOnClickListener(v -> showAvailableRecipesDialog());
+
+        // Add click listener to image view to allow changing image
+        imageMenu.setOnClickListener(v -> openImagePicker());
+        imageMenu.setOnLongClickListener(v -> {
+            // Long click to clear image
+            new AlertDialog.Builder(this)
+                    .setTitle("Xóa ảnh")
+                    .setMessage("Bạn có muốn xóa ảnh hiện tại không?")
+                    .setPositiveButton("Xóa", (dialog, which) -> {
+                        imageUri = null;
+                        existingImageUrl = null;
+                        imageMenu.setImageResource(R.drawable.ic_launcher_background);
+                        Toast.makeText(this, "Đã xóa ảnh", Toast.LENGTH_SHORT).show();
+                    })
+                    .setNegativeButton("Hủy", null)
+                    .show();
+            return true;
         });
 
         // Setup date pickers
@@ -134,24 +205,32 @@ public class CreateMenuActivity extends AppCompatActivity {
                                 }
                                 
                                 if (imageUrl != null && !imageUrl.isEmpty()) {
-                                    try {
-                                        if (imageUrl.startsWith("content://") || imageUrl.startsWith("file://")) {
-                                            android.net.Uri uri = android.net.Uri.parse(imageUrl);
-                                            Glide.with(CreateMenuActivity.this)
-                                                    .load(uri)
-                                                    .placeholder(R.drawable.ic_launcher_background)
-                                                    .error(R.drawable.ic_launcher_background)
-                                                    .into(imageMenu);
-                                        } else {
+                                    // Check if it's a valid URL (Cloudinary, http, https, content, file)
+                                    if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://") ||
+                                        imageUrl.startsWith("content://") || imageUrl.startsWith("file://")) {
+                                        try {
                                             Glide.with(CreateMenuActivity.this)
                                                     .load(imageUrl)
                                                     .placeholder(R.drawable.ic_launcher_background)
                                                     .error(R.drawable.ic_launcher_background)
                                                     .into(imageMenu);
+                                            Log.d(TAG, "Loading image from URL: " + imageUrl);
+                                        } catch (Exception ex) {
+                                            Log.e(TAG, "Failed to load image from URL: " + imageUrl, ex);
+                                            imageMenu.setImageResource(R.drawable.ic_launcher_background);
+                                            Toast.makeText(CreateMenuActivity.this, "Unable to load existing image", Toast.LENGTH_SHORT).show();
                                         }
-                                    } catch (Exception ex) {
+                                    } else {
+                                        // Legacy local filename (e.g., 'diet_menu.jpg') - cannot load, show placeholder
+                                        Log.w(TAG, "Legacy local filename detected: " + imageUrl + ". Cannot load. Please upload new image.");
                                         imageMenu.setImageResource(R.drawable.ic_launcher_background);
+                                        Toast.makeText(CreateMenuActivity.this, "Ảnh cũ không khả dụng. Vui lòng tải ảnh mới!", Toast.LENGTH_LONG).show();
+                                        // Clear the existing URL so user must upload new one
+                                        existingImageUrl = null;
                                     }
+                                } else {
+                                    Log.d(TAG, "No image URL available");
+                                    imageMenu.setImageResource(R.drawable.ic_launcher_background);
                                 }
                             });
                         }
@@ -212,7 +291,7 @@ public class CreateMenuActivity extends AppCompatActivity {
             try {
                 // Persist read permission so the app can read this URI later (important for content:// URIs)
                 try {
-                    final int takeFlags = data.getFlags() & (Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+                    final int takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION;
                     getContentResolver().takePersistableUriPermission(imageUri, takeFlags);
                 } catch (SecurityException se) {
                     Log.w(TAG, "Could not take persistable uri permission", se);
@@ -220,8 +299,11 @@ public class CreateMenuActivity extends AppCompatActivity {
 
                 Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
                 imageMenu.setImageBitmap(bitmap);
+                Toast.makeText(this, "Đã chọn ảnh mới", Toast.LENGTH_SHORT).show();
+                Log.d(TAG, "New image selected: " + imageUri.toString());
             } catch (IOException e) {
                 Log.e(TAG, "Error loading picked image", e);
+                Toast.makeText(this, "Lỗi khi tải ảnh: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             }
         }
     }
@@ -281,9 +363,11 @@ public class CreateMenuActivity extends AppCompatActivity {
         if (imageUri != null) {
             // New image selected, upload it
             Toast.makeText(this, "Uploading image...", Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "Uploading new image to Cloudinary...");
             CloudinaryHelper.uploadImage(this, imageUri, new CloudinaryHelper.UploadCallback() {
                 @Override
                 public void onSuccess(String newImageUrl) {
+                    Log.d(TAG, "Image uploaded successfully: " + newImageUrl);
                     menuToSave.setImageUrl(newImageUrl);
                     if (isEditMode) {
                         updateMenuInDb(menuToSave, dbSuccessAction, dbErrorAction);
@@ -293,25 +377,180 @@ public class CreateMenuActivity extends AppCompatActivity {
                 }
                 @Override
                 public void onError(String error) {
+                    Log.e(TAG, "Image upload failed: " + error);
                     Toast.makeText(CreateMenuActivity.this, "Image upload failed: " + error, Toast.LENGTH_SHORT).show();
-                    // Keep existing image if edit mode, or save without image
-                    menuToSave.setImageUrl(isEditMode ? existingImageUrl : "");
-                    if (isEditMode) {
-                        updateMenuInDb(menuToSave, dbSuccessAction, dbErrorAction);
-                    } else {
-                        insertMenuToDb(menuToSave, dbSuccessAction, dbErrorAction);
-                    }
+                    // Allow user to save without image or with old image
+                    new AlertDialog.Builder(CreateMenuActivity.this)
+                            .setTitle("Upload ảnh thất bại")
+                            .setMessage("Không thể upload ảnh. Bạn có muốn:\n\n1. Lưu menu không có ảnh\n2. Giữ ảnh cũ (nếu có)\n3. Hủy và thử lại")
+                            .setPositiveButton("Lưu không có ảnh", (dialog, which) -> {
+                                menuToSave.setImageUrl("");
+                                if (isEditMode) {
+                                    updateMenuInDb(menuToSave, dbSuccessAction, dbErrorAction);
+                                } else {
+                                    insertMenuToDb(menuToSave, dbSuccessAction, dbErrorAction);
+                                }
+                            })
+                            .setNeutralButton("Giữ ảnh cũ", (dialog, which) -> {
+                                if (isEditMode && existingImageUrl != null && !existingImageUrl.isEmpty()) {
+                                    // Only keep old image if it's a valid URL
+                                    if (existingImageUrl.startsWith("http://") || existingImageUrl.startsWith("https://")) {
+                                        menuToSave.setImageUrl(existingImageUrl);
+                                    } else {
+                                        menuToSave.setImageUrl("");
+                                    }
+                                } else {
+                                    menuToSave.setImageUrl("");
+                                }
+                                if (isEditMode) {
+                                    updateMenuInDb(menuToSave, dbSuccessAction, dbErrorAction);
+                                } else {
+                                    insertMenuToDb(menuToSave, dbSuccessAction, dbErrorAction);
+                                }
+                            })
+                            .setNegativeButton("Hủy", null)
+                            .show();
                 }
             });
         } else {
             // No new image selected
-            menuToSave.setImageUrl(isEditMode ? existingImageUrl : "");
+            Log.d(TAG, "No new image selected");
             if (isEditMode) {
+                // Keep existing image if valid, otherwise clear it
+                if (existingImageUrl != null && !existingImageUrl.isEmpty()) {
+                    // Only keep if it's a valid URL
+                    if (existingImageUrl.startsWith("http://") || existingImageUrl.startsWith("https://")) {
+                        menuToSave.setImageUrl(existingImageUrl);
+                        Log.d(TAG, "Keeping existing valid image URL: " + existingImageUrl);
+                    } else {
+                        // Legacy local filename - clear it
+                        menuToSave.setImageUrl("");
+                        Log.d(TAG, "Clearing legacy image URL: " + existingImageUrl);
+                    }
+                } else {
+                    menuToSave.setImageUrl("");
+                    Log.d(TAG, "No existing image URL");
+                }
                 updateMenuInDb(menuToSave, dbSuccessAction, dbErrorAction);
             } else {
+                // New menu without image
+                menuToSave.setImageUrl("");
+                Log.d(TAG, "Creating new menu without image");
                 insertMenuToDb(menuToSave, dbSuccessAction, dbErrorAction);
             }
         }
+    }
+
+    /**
+     * Show dialog with available recipes (not in any menu yet)
+     */
+    private void showAvailableRecipesDialog() {
+        dbExecutor.execute(() -> {
+            List<Recipe> availableRecipes = new ArrayList<>();
+            try (Connection conn = DatabaseConnection.getConnection()) {
+                if (conn == null) throw new SQLException("DB connection is null");
+
+                String currentUserId = UserSessionManager.getInstance(this).getCurrentUserId();
+
+                // Get recipes that are NOT in any menu yet
+                String sql = "SELECT r.recipe_id, r.name, r.image_url, r.instruction, r.nutrition " +
+                            "FROM Recipe r " +
+                            "WHERE r.user_id = ? " +
+                            "AND r.recipe_id NOT IN (SELECT recipe_id FROM RecipeInMenu) " +
+                            "ORDER BY r.create_at DESC";
+
+                try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                    stmt.setString(1, currentUserId);
+                    try (ResultSet rs = stmt.executeQuery()) {
+                        while (rs.next()) {
+                            Recipe recipe = new Recipe();
+                            recipe.setRecipeId(rs.getString("recipe_id"));
+                            recipe.setName(rs.getString("name"));
+                            recipe.setImageUrl(rs.getString("image_url"));
+                            recipe.setInstruction(rs.getString("instruction"));
+                            recipe.setNutrition(rs.getString("nutrition"));
+                            availableRecipes.add(recipe);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error loading available recipes", e);
+                runOnUiThread(() -> Toast.makeText(this, "Error loading recipes: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                return;
+            }
+
+            runOnUiThread(() -> {
+                if (availableRecipes.isEmpty()) {
+                    Toast.makeText(this, "Không có recipe nào khả dụng. Hãy tạo recipe mới!", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                showRecipeSelectionDialog(availableRecipes);
+            });
+        });
+    }
+
+    /**
+     * Show dialog to select multiple recipes
+     */
+    private void showRecipeSelectionDialog(List<Recipe> recipes) {
+        String[] recipeNames = new String[recipes.size()];
+        boolean[] checkedItems = new boolean[recipes.size()];
+
+        for (int i = 0; i < recipes.size(); i++) {
+            recipeNames[i] = recipes.get(i).getName();
+            // Check if already selected
+            checkedItems[i] = selectedRecipeIds.contains(recipes.get(i).getRecipeId());
+        }
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Chọn Recipe để thêm vào Menu")
+                .setMultiChoiceItems(recipeNames, checkedItems, (dialog, which, isChecked) -> {
+                    Recipe recipe = recipes.get(which);
+                    if (isChecked) {
+                        if (!selectedRecipeIds.contains(recipe.getRecipeId())) {
+                            selectedRecipes.add(recipe);
+                            selectedRecipeIds.add(recipe.getRecipeId());
+                        }
+                    } else {
+                        selectedRecipes.removeIf(r -> r.getRecipeId().equals(recipe.getRecipeId()));
+                        selectedRecipeIds.remove(recipe.getRecipeId());
+                    }
+                })
+                .setPositiveButton("Xong", (dialog, which) -> {
+                    if (selectedRecipes.isEmpty()) {
+                        Toast.makeText(this, "Chưa chọn recipe nào", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(this, "Đã chọn " + selectedRecipes.size() + " recipe(s)", Toast.LENGTH_SHORT).show();
+                        // Update RecyclerView to show selected recipes
+                        selectedRecipeAdapter.notifyDataSetChanged();
+                    }
+                })
+                .setNegativeButton("Hủy", null)
+                .show();
+    }
+
+    /**
+     * Handle remove recipe button click with confirmation dialog
+     */
+    private void onRemoveRecipeClicked(Recipe recipe, int position) {
+        new AlertDialog.Builder(this)
+                .setTitle("Xóa Recipe")
+                .setMessage("Bạn có chắc chắn muốn xóa \"" + recipe.getName() + "\" khỏi menu không?")
+                .setPositiveButton("Xóa", (dialog, which) -> {
+                    // Remove from lists
+                    selectedRecipes.remove(position);
+                    selectedRecipeIds.remove(recipe.getRecipeId());
+
+                    // Update RecyclerView
+                    selectedRecipeAdapter.notifyItemRemoved(position);
+                    selectedRecipeAdapter.notifyItemRangeChanged(position, selectedRecipes.size());
+
+                    Toast.makeText(this, "Đã xóa \"" + recipe.getName() + "\"", Toast.LENGTH_SHORT).show();
+                    Log.d(TAG, "Removed recipe: " + recipe.getName() + " from selection");
+                })
+                .setNegativeButton("Hủy", null)
+                .show();
     }
 
     private void insertMenuToDb(Menu menu, Runnable onSuccess, Consumer<String> onError) {
@@ -377,6 +616,12 @@ public class CreateMenuActivity extends AppCompatActivity {
 
                     if (stmt.executeUpdate() <= 0) throw new SQLException("Insert failed");
                     menu.setMenuId(id);
+
+                    // After inserting menu, insert selected recipes into RecipeInMenu
+                    if (!selectedRecipes.isEmpty()) {
+                        insertRecipesIntoMenu(conn, id, selectedRecipes);
+                    }
+
                     runOnUiThread(onSuccess);
                 }
             } catch (Exception e) {
@@ -423,5 +668,44 @@ public class CreateMenuActivity extends AppCompatActivity {
                 runOnUiThread(() -> onError.accept(e.getMessage()));
             }
         });
+    }
+
+    /**
+     * Insert selected recipes into RecipeInMenu table
+     */
+    private void insertRecipesIntoMenu(Connection conn, String menuId, List<Recipe> recipes) throws SQLException {
+        String sql = "INSERT INTO RecipeInMenu (recipeMenu_id, menu_id, recipe_id) VALUES (?, ?, ?)";
+
+        for (Recipe recipe : recipes) {
+            // Generate recipeMenu_id
+            String recipeMenuId = generateRecipeMenuId(conn);
+
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setString(1, recipeMenuId);
+                stmt.setString(2, menuId);
+                stmt.setString(3, recipe.getRecipeId());
+                stmt.executeUpdate();
+                Log.d(TAG, "Inserted recipe " + recipe.getName() + " into menu " + menuId);
+            }
+        }
+    }
+
+    /**
+     * Generate unique recipeMenu_id
+     */
+    private String generateRecipeMenuId(Connection conn) throws SQLException {
+        // Find max numeric suffix and increment
+        try (PreparedStatement stmt = conn.prepareStatement(
+                "SELECT MAX(CAST(SUBSTRING(recipeMenu_id, 3) AS UNSIGNED)) AS maxnum FROM RecipeInMenu WHERE recipeMenu_id REGEXP '^RM[0-9]+$'")) {
+            try (ResultSet rs = stmt.executeQuery()) {
+                int max = 0;
+                if (rs.next()) {
+                    max = rs.getInt("maxnum");
+                    if (rs.wasNull()) max = 0;
+                }
+                int next = max + 1;
+                return String.format(Locale.US, "RM%03d", next);
+            }
+        }
     }
 }
