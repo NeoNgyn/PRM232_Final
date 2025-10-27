@@ -28,6 +28,7 @@ import com.example.final_project.utils.DatabaseConnection;
 import com.example.final_project.utils.UserSessionManager;
 import com.example.final_project.views.adapter.HomeMenuAdapter;
 import com.example.final_project.views.adapter.RecipeAdapter;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
@@ -106,8 +107,25 @@ public class HomeMenuActivity extends AppCompatActivity {
 
         // Initialize navigation buttons
         btnGoToFridge = findViewById(R.id.btnGoToFridge);
-        btnMenuNav = findViewById(R.id.btnMenuNav);
-        btnFridgeNav = findViewById(R.id.btnFridgeNav);
+//        btnMenuNav = findViewById(R.id.btnMenuNav);
+//        btnFridgeNav = findViewById(R.id.btnFridgeNav);
+
+        // --- Navbar ---
+        BottomNavigationView bottomNav = findViewById(R.id.bottom_navbar);
+        bottomNav.setSelectedItemId(R.id.nav_home);
+        bottomNav.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.nav_home) {
+                Toast.makeText(this, "Đang ở Trang chủ", Toast.LENGTH_SHORT).show();
+                return true;
+            } else if (id == R.id.nav_ai) {
+                Intent intent = new Intent(HomeMenuActivity.this, ChatActivity.class);
+                startActivity(intent);
+                return true;
+            }
+            return false;
+        });
+
         // btnLogout removed - now accessed via avatar menu
         imgAvatar = findViewById(R.id.imgAvatar);
 
@@ -130,16 +148,16 @@ public class HomeMenuActivity extends AppCompatActivity {
             performSearch();
         });
 
-        // Go to Fridge button
+//        // Go to Fridge button
         btnGoToFridge.setOnClickListener(v -> navigateToFridge());
-
-        // Bottom navigation - Menu (already on menu page)
-        btnMenuNav.setOnClickListener(v -> {
-            Toast.makeText(this, "You are already on Menu page", Toast.LENGTH_SHORT).show();
-        });
-
-        // Bottom navigation - Fridge
-        btnFridgeNav.setOnClickListener(v -> navigateToFridge());
+//
+//        // Bottom navigation - Menu (already on menu page)
+//        btnMenuNav.setOnClickListener(v -> {
+//            Toast.makeText(this, "You are already on Menu page", Toast.LENGTH_SHORT).show();
+//        });
+//
+//        // Bottom navigation - Fridge
+//        btnFridgeNav.setOnClickListener(v -> navigateToFridge());
 
         // Logout button removed from bottom nav - now in avatar menu
 
@@ -154,6 +172,9 @@ public class HomeMenuActivity extends AppCompatActivity {
         super.onResume();
         loadMenuFromDatabase();
         loadRecentRecipesFromDatabase();
+
+        BottomNavigationView bottomNav = findViewById(R.id.bottom_navbar);
+        bottomNav.setSelectedItemId(R.id.nav_home);
 
         // Đảm bảo header luôn nằm trên cùng sau khi resume
         View header = findViewById(R.id.headerContainer);
