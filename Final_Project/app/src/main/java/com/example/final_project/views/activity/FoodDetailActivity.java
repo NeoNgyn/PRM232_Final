@@ -24,7 +24,7 @@ import java.util.Locale;
 public class FoodDetailActivity extends AppCompatActivity {
 
     private ImageView imgFood;
-    private TextView tvName, tvExpiry, tvQty, tvNotes;
+    private TextView tvName, tvExpiry, tvQty;
     private Button btnEdit, btnDelete;
     
     private FoodItem currentFood;
@@ -45,7 +45,6 @@ public class FoodDetailActivity extends AppCompatActivity {
         tvName = findViewById(R.id.tvName);
         tvExpiry = findViewById(R.id.tvExpiry);
         tvQty = findViewById(R.id.tvQty);
-        tvNotes = findViewById(R.id.tvNotes);
         btnEdit = findViewById(R.id.btnEdit);
         btnDelete = findViewById(R.id.btnDelete);
     }
@@ -57,8 +56,6 @@ public class FoodDetailActivity extends AppCompatActivity {
             currentFood = new FoodItem("1", "Sữa tươi Vinamilk", 2, 
                 dateFormat.parse("03/10/2025"), "milk",
                 new Date(), new Date(), null, null, null);
-            // Set note separately
-            currentFood.setNote("Dùng cho bữa sáng");
         } catch (ParseException e) {
             e.printStackTrace();
         }
@@ -71,7 +68,6 @@ public class FoodDetailActivity extends AppCompatActivity {
             tvName.setText(currentFood.getFoodName());
             tvExpiry.setText("HSD: " + dateFormat.format(currentFood.getExpiryDate()));
             tvQty.setText("Số lượng: " + currentFood.getQuantity() + " hộp");
-            tvNotes.setText("Ghi chú: " + currentFood.getNote());
             
             // Load image
             int resId = getResources().getIdentifier(currentFood.getImageUrl(), "drawable", getPackageName());
@@ -97,9 +93,7 @@ public class FoodDetailActivity extends AppCompatActivity {
         
         EditText etName = dialogView.findViewById(R.id.etName);
         EditText etQty = dialogView.findViewById(R.id.etQty);
-        EditText etUnit = dialogView.findViewById(R.id.etUnit);
         EditText etExpiry = dialogView.findViewById(R.id.etExpiry);
-        EditText etNotes = dialogView.findViewById(R.id.etNotes);
         Button btnSave = dialogView.findViewById(R.id.btnSave);
         Button btnCancel = dialogView.findViewById(R.id.btnCancel);
         
@@ -107,16 +101,13 @@ public class FoodDetailActivity extends AppCompatActivity {
         etName.setText(currentFood.getFoodName());
         etQty.setText(String.valueOf(currentFood.getQuantity()));
         etExpiry.setText(dateFormat.format(currentFood.getExpiryDate()));
-        etNotes.setText(currentFood.getNote());
         
         btnSave.setText("✏️ Cập nhật");
         
         btnSave.setOnClickListener(v -> {
             String name = etName.getText().toString().trim();
             String qtyStr = etQty.getText().toString().trim();
-            String unit = etUnit.getText().toString().trim();
             String expiryStr = etExpiry.getText().toString().trim();
-            String notes = etNotes.getText().toString().trim();
             
             if (validateInput(name, qtyStr, expiryStr)) {
                 try {
@@ -126,7 +117,6 @@ public class FoodDetailActivity extends AppCompatActivity {
                     currentFood.setFoodName(name);
                     currentFood.setQuantity(quantity);
                     currentFood.setExpiryDate(expiryDate);
-                    currentFood.setNote(notes);
                     currentFood.setUpdatedAt(new Date());
                     
                     updateUI();

@@ -12,6 +12,8 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ImageView;
+import android.widget.Spinner;
+import android.widget.ArrayAdapter;
 import android.content.Intent;
 import android.net.Uri;
 
@@ -44,6 +46,8 @@ import java.sql.SQLException;
 import android.app.DatePickerDialog;
 import java.util.Calendar;
 import java.util.function.Consumer;
+import java.util.HashMap;
+import java.util.Map;
 
 public class FridgeInventoryActivity extends AppCompatActivity implements InventoryAdapter.OnFoodActionListener {
 
@@ -179,7 +183,12 @@ public class FridgeInventoryActivity extends AppCompatActivity implements Invent
                 try (Connection conn = DatabaseConnection.getConnection()) {
                     if (conn == null) throw new SQLException("DB connection is null");
 
-                    String sql = "SELECT food_id, food_name, quantity, expiry_date, image_url, create_at, update_at, note FROM FoodItem WHERE user_id = ? ORDER BY create_at DESC";
+                    String sql = "SELECT f.food_id, f.food_name, f.quantity, f.expiry_date, f.image_url, f.create_at, f.update_at, " +
+                                 "c.category_id, c.category_name, u.unit_id, u.unit_name " +
+                                 "FROM FoodItem f " +
+                                 "LEFT JOIN Category c ON f.category_id = c.category_id " +
+                                 "LEFT JOIN Unit u ON f.unit_id = u.unit_id " +
+                                 "WHERE f.user_id = ? ORDER BY f.create_at DESC";
                     try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                         stmt.setString(1, currentUserId);
                         try (ResultSet rs = stmt.executeQuery()) {
@@ -190,7 +199,6 @@ public class FridgeInventoryActivity extends AppCompatActivity implements Invent
                                 java.sql.Timestamp expirySql = rs.getTimestamp("expiry_date");
                                 Date expiry = expirySql == null ? null : new Date(expirySql.getTime());
                                 String imageUrl = rs.getString("image_url");
-                                String note = rs.getString("note");
 
                                 Date createdAt = null;
                                 java.sql.Timestamp tsCreate = rs.getTimestamp("create_at");
@@ -200,8 +208,23 @@ public class FridgeInventoryActivity extends AppCompatActivity implements Invent
                                 java.sql.Timestamp tsUpdate = rs.getTimestamp("update_at");
                                 if (tsUpdate != null) updatedAt = new Date(tsUpdate.getTime());
 
-                                FoodItem f = new FoodItem(id, name, qty, expiry, imageUrl, createdAt, updatedAt, null, null, null);
-                                f.setNote(note);
+                                // Build Category object
+                                com.example.final_project.models.entity.Category category = null;
+                                int categoryId = rs.getInt("category_id");
+                                if (categoryId > 0) {
+                                    String categoryName = rs.getString("category_name");
+                                    category = new com.example.final_project.models.entity.Category(categoryId, categoryName);
+                                }
+                                
+                                // Build Unit object
+                                com.example.final_project.models.entity.Unit unit = null;
+                                int unitId = rs.getInt("unit_id");
+                                if (unitId > 0) {
+                                    String unitName = rs.getString("unit_name");
+                                    unit = new com.example.final_project.models.entity.Unit(unitId, unitName);
+                                }
+
+                                FoodItem f = new FoodItem(id, name, qty, expiry, imageUrl, createdAt, updatedAt, null, category, unit);
                                 list.add(f);
                             }
                         }
@@ -222,13 +245,35 @@ public class FridgeInventoryActivity extends AppCompatActivity implements Invent
         });
     }
 
-    private void insertFoodToDb(FoodItem food, Runnable onSuccess, Consumer<String> onError) {
+    private void insertFoodToDb(FoodItem food, Runnable onSuccess, Consumer<String> onError, String categoryName, String unitName) {
         dbExecutor.execute(() -> {
             try (Connection conn = DatabaseConnection.getConnection()) {
                 if (conn == null) throw new SQLException("DB connection is null");
 
                 String currentUserId = UserSessionManager.getInstance(this).getRequiredUserId();
-                String sql = "INSERT INTO FoodItem (food_id, food_name, quantity, expiry_date, image_url, note, create_at, update_at, user_id) VALUES (?,?,?,?,?,?,?,?,?)";
+                
+                // Get category_id and unit_id from names
+                String getCategoryIdSql = "SELECT category_id FROM category WHERE category_name = ?";
+                String categoryId = null;
+                try (PreparedStatement stmt = conn.prepareStatement(getCategoryIdSql)) {
+                    stmt.setString(1, categoryName);
+                    try (ResultSet rs = stmt.executeQuery()) {
+                        if (rs.next()) categoryId = rs.getString("category_id");
+                    }
+                }
+                
+                String getUnitIdSql = "SELECT unit_id FROM unit WHERE unit_name = ?";
+                String unitId = null;
+                try (PreparedStatement stmt = conn.prepareStatement(getUnitIdSql)) {
+                    stmt.setString(1, unitName);
+                    try (ResultSet rs = stmt.executeQuery()) {
+                        if (rs.next()) unitId = rs.getString("unit_id");
+                    }
+                }
+                
+                if (categoryId == null || unitId == null) throw new SQLException("Invalid category or unit");
+                
+                String sql = "INSERT INTO FoodItem (food_id, food_name, quantity, expiry_date, image_url, category_id, unit_id, create_at, update_at, user_id) VALUES (?,?,?,?,?,?,?,?,?,?)";
                 try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                     String id = food.getFoodId();
                     if (id == null || id.isEmpty()) {
@@ -241,10 +286,11 @@ public class FridgeInventoryActivity extends AppCompatActivity implements Invent
                     stmt.setInt(3, food.getQuantity());
                     if (food.getExpiryDate() != null) stmt.setTimestamp(4, new java.sql.Timestamp(food.getExpiryDate().getTime())); else stmt.setNull(4, java.sql.Types.TIMESTAMP);
                     stmt.setString(5, food.getImageUrl());
-                    stmt.setString(6, food.getNote());
-                    stmt.setTimestamp(7, new java.sql.Timestamp(new Date().getTime()));
+                    stmt.setString(6, categoryId);
+                    stmt.setString(7, unitId);
                     stmt.setTimestamp(8, new java.sql.Timestamp(new Date().getTime()));
-                    stmt.setString(9, currentUserId);
+                    stmt.setTimestamp(9, new java.sql.Timestamp(new Date().getTime()));
+                    stmt.setString(10, currentUserId);
 
                     if (stmt.executeUpdate() <= 0) throw new SQLException("Insert failed");
                     food.setFoodId(id);
@@ -257,22 +303,45 @@ public class FridgeInventoryActivity extends AppCompatActivity implements Invent
         });
     }
 
-    private void updateFoodInDb(FoodItem food, Runnable onSuccess, Consumer<String> onError) {
+    private void updateFoodInDb(FoodItem food, Runnable onSuccess, Consumer<String> onError, String categoryName, String unitName) {
         dbExecutor.execute(() -> {
             try (Connection conn = DatabaseConnection.getConnection()) {
                 if (conn == null) throw new SQLException("DB connection is null");
 
                 String currentUserId = UserSessionManager.getInstance(this).getRequiredUserId();
-                String sql = "UPDATE FoodItem SET food_name=?, quantity=?, expiry_date=?, image_url=?, note=?, update_at=? WHERE food_id=? AND user_id=?";
+                
+                // Get category_id and unit_id from names
+                String getCategoryIdSql = "SELECT category_id FROM category WHERE category_name = ?";
+                String categoryId = null;
+                try (PreparedStatement stmt = conn.prepareStatement(getCategoryIdSql)) {
+                    stmt.setString(1, categoryName);
+                    try (ResultSet rs = stmt.executeQuery()) {
+                        if (rs.next()) categoryId = rs.getString("category_id");
+                    }
+                }
+                
+                String getUnitIdSql = "SELECT unit_id FROM unit WHERE unit_name = ?";
+                String unitId = null;
+                try (PreparedStatement stmt = conn.prepareStatement(getUnitIdSql)) {
+                    stmt.setString(1, unitName);
+                    try (ResultSet rs = stmt.executeQuery()) {
+                        if (rs.next()) unitId = rs.getString("unit_id");
+                    }
+                }
+                
+                if (categoryId == null || unitId == null) throw new SQLException("Invalid category or unit");
+                
+                String sql = "UPDATE FoodItem SET food_name=?, quantity=?, expiry_date=?, image_url=?, category_id=?, unit_id=?, update_at=? WHERE food_id=? AND user_id=?";
                 try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                     stmt.setString(1, food.getFoodName());
                     stmt.setInt(2, food.getQuantity());
                     if (food.getExpiryDate() != null) stmt.setTimestamp(3, new java.sql.Timestamp(food.getExpiryDate().getTime())); else stmt.setNull(3, java.sql.Types.TIMESTAMP);
                     stmt.setString(4, food.getImageUrl());
-                    stmt.setString(5, food.getNote());
-                    stmt.setTimestamp(6, new java.sql.Timestamp(new Date().getTime()));
-                    stmt.setString(7, food.getFoodId());
-                    stmt.setString(8, currentUserId);
+                    stmt.setString(5, categoryId);
+                    stmt.setString(6, unitId);
+                    stmt.setTimestamp(7, new java.sql.Timestamp(new Date().getTime()));
+                    stmt.setString(8, food.getFoodId());
+                    stmt.setString(9, currentUserId);
 
                     if (stmt.executeUpdate() <= 0) throw new SQLException("Update failed");
                     runOnUiThread(onSuccess);
@@ -382,9 +451,9 @@ public class FridgeInventoryActivity extends AppCompatActivity implements Invent
         TextView tvDialogTitle = dialogView.findViewById(R.id.dialogTitle);
         EditText etName = dialogView.findViewById(R.id.etName);
         EditText etQty = dialogView.findViewById(R.id.etQty);
-        EditText etUnit = dialogView.findViewById(R.id.etUnit);
+        Spinner spinnerCategory = dialogView.findViewById(R.id.spinnerCategory);
+        Spinner spinnerUnit = dialogView.findViewById(R.id.spinnerUnit);
         EditText etExpiry = dialogView.findViewById(R.id.etExpiry);
-        EditText etNotes = dialogView.findViewById(R.id.etNotes);
         dialogPreviewImage = dialogView.findViewById(R.id.ivPreview);
         Button btnPickImage = dialogView.findViewById(R.id.btnPickImage);
         Button btnSave = dialogView.findViewById(R.id.btnSave);
@@ -396,15 +465,146 @@ public class FridgeInventoryActivity extends AppCompatActivity implements Invent
         tvDialogTitle.setText(isEditing ? "Sửa thực phẩm" : "Thêm thực phẩm");
         btnSave.setText(isEditing ? "Cập nhật" : "Lưu");
 
-        if (isEditing) {
-            etName.setText(food.getFoodName());
-            etQty.setText(String.valueOf(food.getQuantity()));
-            if (food.getExpiryDate() != null) etExpiry.setText(dateFormat.format(food.getExpiryDate()));
-            etNotes.setText(food.getNote());
-            if (food.getImageUrl() != null && !food.getImageUrl().isEmpty()) {
-                Glide.with(this).load(food.getImageUrl()).into(dialogPreviewImage);
+        // Load categories and units from database
+        dbExecutor.execute(() -> {
+            try {
+                String userId = UserSessionManager.getInstance(this).getRequiredUserId();
+                
+                // Fetch categories
+                java.util.List<String> categoryNames = new java.util.ArrayList<>();
+                java.util.Map<String, String> categoryMap = new java.util.HashMap<>();
+                categoryNames.add("-- Chọn danh mục --");
+                categoryMap.put("-- Chọn danh mục --", "0");
+                
+                Connection conn = DatabaseConnection.getConnection();
+                String query = "SELECT category_id, category_name FROM category";
+                PreparedStatement pstmt = conn.prepareStatement(query);
+                ResultSet rs = pstmt.executeQuery();
+                while (rs.next()) {
+                    String name = rs.getString("category_name");
+                    String id = rs.getString("category_id");
+                    categoryNames.add(name);
+                    categoryMap.put(name, id);
+                }
+                rs.close();
+                pstmt.close();
+                
+                // Fetch units
+                java.util.List<String> unitNames = new java.util.ArrayList<>();
+                java.util.Map<String, String> unitMap = new java.util.HashMap<>();
+                unitNames.add("-- Chọn đơn vị --");
+                unitMap.put("-- Chọn đơn vị --", "0");
+                
+                query = "SELECT unit_id, unit_name FROM unit";
+                pstmt = conn.prepareStatement(query);
+                rs = pstmt.executeQuery();
+                while (rs.next()) {
+                    String name = rs.getString("unit_name");
+                    String id = rs.getString("unit_id");
+                    unitNames.add(name);
+                    unitMap.put(name, id);
+                }
+                rs.close();
+                pstmt.close();
+                
+                runOnUiThread(() -> {
+                    // Setup Category Spinner
+                    ArrayAdapter<String> categoryAdapter = new ArrayAdapter<>(
+                        this, android.R.layout.simple_spinner_item, categoryNames
+                    );
+                    categoryAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                    spinnerCategory.setAdapter(categoryAdapter);
+                    
+                    // Setup Unit Spinner
+                    ArrayAdapter<String> unitAdapter = new ArrayAdapter<>(
+                        this, android.R.layout.simple_spinner_item, unitNames
+                    );
+                    unitAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                    spinnerUnit.setAdapter(unitAdapter);
+                    
+                    // Pre-select if editing
+                    if (isEditing && food != null) {
+                        etName.setText(food.getFoodName());
+                        etQty.setText(String.valueOf(food.getQuantity()));
+                        if (food.getExpiryDate() != null) etExpiry.setText(dateFormat.format(food.getExpiryDate()));
+                        
+                        // Set category spinner
+                        if (food.getCategory() != null) {
+                            int categoryPos = categoryNames.indexOf(food.getCategory().getCategoryName());
+                            if (categoryPos >= 0) spinnerCategory.setSelection(categoryPos);
+                        }
+                        
+                        // Set unit spinner
+                        if (food.getUnit() != null) {
+                            int unitPos = unitNames.indexOf(food.getUnit().getUnitName());
+                            if (unitPos >= 0) spinnerUnit.setSelection(unitPos);
+                        }
+                        
+                        if (food.getImageUrl() != null && !food.getImageUrl().isEmpty()) {
+                            Glide.with(this).load(food.getImageUrl()).into(dialogPreviewImage);
+                        }
+                    }
+                    
+                    // Save button listener with spinner values
+                    btnSave.setOnClickListener(v -> {
+                        String name = etName.getText().toString().trim();
+                        String qtyStr = etQty.getText().toString().trim();
+                        String expiryStr = etExpiry.getText().toString().trim();
+                        String selectedCategory = spinnerCategory.getSelectedItem().toString();
+                        String selectedUnit = spinnerUnit.getSelectedItem().toString();
+
+                        if (!validateInput(name, qtyStr, expiryStr)) return;
+                        if (selectedCategory.equals("-- Chọn danh mục --") || selectedUnit.equals("-- Chọn đơn vị --")) {
+                            Toast.makeText(FridgeInventoryActivity.this, "Vui lòng chọn danh mục và đơn vị", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        Runnable dbSuccessAction = () -> {
+                            loadFromDatabase();
+                            dialog.dismiss();
+                            Toast.makeText(this, isEditing ? "Cập nhật thành công!" : "Thêm thành công!", Toast.LENGTH_SHORT).show();
+                        };
+
+                        Consumer<String> dbErrorAction = error -> Toast.makeText(this, "Lỗi: " + error, Toast.LENGTH_LONG).show();
+
+                        FoodItem itemToSave = isEditing ? food : new FoodItem();
+                        itemToSave.setFoodName(name);
+                        itemToSave.setQuantity(Integer.parseInt(qtyStr));
+                        try {
+                            if (!expiryStr.isEmpty()) itemToSave.setExpiryDate(dateFormat.parse(expiryStr));
+                        } catch (java.text.ParseException e) {
+                            e.printStackTrace();
+                        }
+
+                        if (pendingImageUri != null) {
+                            Toast.makeText(this, "Đang upload ảnh...", Toast.LENGTH_SHORT).show();
+                            CloudinaryHelper.uploadImage(this, pendingImageUri, new CloudinaryHelper.UploadCallback() {
+                                @Override
+                                public void onSuccess(String newImageUrl) {
+                                    itemToSave.setImageUrl(newImageUrl);
+                                    if (isEditing) updateFoodInDb(itemToSave, dbSuccessAction, dbErrorAction, selectedCategory, selectedUnit);
+                                    else insertFoodToDb(itemToSave, dbSuccessAction, dbErrorAction, selectedCategory, selectedUnit);
+                                }
+                                @Override
+                                public void onError(String error) {
+                                    Toast.makeText(FridgeInventoryActivity.this, "Lỗi upload ảnh: " + error, Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        } else {
+                            if (isEditing) {
+                                updateFoodInDb(itemToSave, dbSuccessAction, dbErrorAction, selectedCategory, selectedUnit);
+                            } else {
+                                itemToSave.setImageUrl(""); // Default image if none picked
+                                insertFoodToDb(itemToSave, dbSuccessAction, dbErrorAction, selectedCategory, selectedUnit);
+                            }
+                        }
+                    });
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
+                Toast.makeText(FridgeInventoryActivity.this, "Lỗi tải danh mục/đơn vị", Toast.LENGTH_SHORT).show();
             }
-        }
+        });
 
         btnPickImage.setOnClickListener(v -> {
             Intent pick = new Intent(Intent.ACTION_GET_CONTENT);
@@ -413,56 +613,6 @@ public class FridgeInventoryActivity extends AppCompatActivity implements Invent
         });
 
         etExpiry.setOnClickListener(v -> showDatePicker(etExpiry));
-
-        btnSave.setOnClickListener(v -> {
-            String name = etName.getText().toString().trim();
-            String qtyStr = etQty.getText().toString().trim();
-            String expiryStr = etExpiry.getText().toString().trim();
-            String notes = etNotes.getText().toString().trim();
-
-            if (!validateInput(name, qtyStr, expiryStr)) return;
-
-            Runnable dbSuccessAction = () -> {
-                loadFromDatabase();
-                dialog.dismiss();
-                Toast.makeText(this, isEditing ? "Cập nhật thành công!" : "Thêm thành công!", Toast.LENGTH_SHORT).show();
-            };
-
-            Consumer<String> dbErrorAction = error -> Toast.makeText(this, "Lỗi: " + error, Toast.LENGTH_LONG).show();
-
-            FoodItem itemToSave = isEditing ? food : new FoodItem();
-            itemToSave.setFoodName(name);
-            itemToSave.setQuantity(Integer.parseInt(qtyStr));
-            try {
-                if (!expiryStr.isEmpty()) itemToSave.setExpiryDate(dateFormat.parse(expiryStr));
-            } catch (ParseException e) {
-                e.printStackTrace();
-            }
-            itemToSave.setNote(notes);
-
-            if (pendingImageUri != null) {
-                Toast.makeText(this, "Đang upload ảnh...", Toast.LENGTH_SHORT).show();
-                CloudinaryHelper.uploadImage(this, pendingImageUri, new CloudinaryHelper.UploadCallback() {
-                    @Override
-                    public void onSuccess(String newImageUrl) {
-                        itemToSave.setImageUrl(newImageUrl);
-                        if (isEditing) updateFoodInDb(itemToSave, dbSuccessAction, dbErrorAction);
-                        else insertFoodToDb(itemToSave, dbSuccessAction, dbErrorAction);
-                    }
-                    @Override
-                    public void onError(String error) {
-                        Toast.makeText(FridgeInventoryActivity.this, "Lỗi upload ảnh: " + error, Toast.LENGTH_SHORT).show();
-                    }
-                });
-            } else {
-                if (isEditing) {
-                    updateFoodInDb(itemToSave, dbSuccessAction, dbErrorAction);
-                } else {
-                    itemToSave.setImageUrl(""); // Default image if none picked
-                    insertFoodToDb(itemToSave, dbSuccessAction, dbErrorAction);
-                }
-            }
-        });
 
         btnCancel.setOnClickListener(v -> dialog.dismiss());
         dialog.show();
