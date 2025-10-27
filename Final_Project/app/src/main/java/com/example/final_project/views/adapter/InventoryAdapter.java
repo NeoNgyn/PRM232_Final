@@ -52,7 +52,6 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Food
             holder.tvFoodName.setText("--");
             holder.tvQuantity.setText(context.getString(R.string.food_quantity, 0));
             holder.tvExpiry.setText(context.getString(R.string.food_expiry, "--"));
-            holder.tvNote.setText("");
             holder.imgFood.setImageResource(R.drawable.ic_food_placeholder);
             return;
         }
@@ -65,7 +64,6 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Food
         } else {
             holder.tvExpiry.setText(context.getString(R.string.food_expiry, "--"));
         }
-        holder.tvNote.setText(food.getNote() == null ? "" : food.getNote());
 
         String image = food.getImageUrl();
         if (image != null && (image.startsWith("http://") || image.startsWith("https://"))) {
@@ -114,7 +112,7 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Food
 
     public static class FoodViewHolder extends RecyclerView.ViewHolder {
         ImageView imgFood;
-        TextView tvFoodName, tvQuantity, tvExpiry, tvNote;
+        TextView tvFoodName, tvQuantity, tvExpiry;
         Button btnEdit, btnDelete;
         public FoodViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -122,7 +120,6 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Food
             tvFoodName = itemView.findViewById(R.id.tvFoodName);
             tvQuantity = itemView.findViewById(R.id.tvQuantity);
             tvExpiry = itemView.findViewById(R.id.tvExpiry);
-            tvNote = itemView.findViewById(R.id.tvNote);
             btnEdit = itemView.findViewById(R.id.btnEdit);
             btnDelete = itemView.findViewById(R.id.btnDelete);
         }

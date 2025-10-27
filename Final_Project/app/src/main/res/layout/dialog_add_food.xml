@@ -43,35 +43,44 @@
                 android:paddingEnd="16dp"
                 android:textSize="16sp"/>
 
+            <EditText
+                android:id="@+id/etQty"
+                android:inputType="numberDecimal"
+                android:hint="📊 Số lượng"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:background="@drawable/bg_edittext_default"
+                android:layout_marginBottom="12dp"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:textSize="16sp"/>
+
             <LinearLayout
                 android:orientation="horizontal"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp">
 
-                <EditText
-                    android:id="@+id/etQty"
-                    android:inputType="numberDecimal"
-                    android:hint="📊 Số lượng"
+                <Spinner
+                    android:id="@+id/spinnerCategory"
+                    android:hint="🏷️ Danh mục"
                     android:layout_width="0dp"
                     android:layout_height="52dp"
                     android:layout_weight="1"
                     android:background="@drawable/bg_edittext_default"
                     android:layout_marginEnd="8dp"
                     android:paddingStart="16dp"
-                    android:paddingEnd="16dp"
-                    android:textSize="16sp"/>
+                    android:paddingEnd="16dp"/>
 
-                <EditText
-                    android:id="@+id/etUnit"
+                <Spinner
+                    android:id="@+id/spinnerUnit"
                     android:hint="📏 Đơn vị"
                     android:layout_width="0dp"
                     android:layout_height="52dp"
                     android:layout_weight="1"
                     android:background="@drawable/bg_edittext_default"
                     android:paddingStart="16dp"
-                    android:paddingEnd="16dp"
-                    android:textSize="16sp"/>
+                    android:paddingEnd="16dp"/>
             </LinearLayout>
 
             <EditText
@@ -83,19 +92,6 @@
                 android:layout_marginBottom="12dp"
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"
-                android:textSize="16sp"/>
-
-            <EditText
-                android:id="@+id/etNotes"
-                android:hint="📝 Ghi chú"
-                android:layout_width="match_parent"
-                android:layout_height="80dp"
-                android:background="@drawable/bg_edittext_default"
-                android:gravity="top"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:paddingTop="12dp"
-                android:paddingBottom="12dp"
                 android:textSize="16sp"/>
 
             <!-- Image picker -->
