@@ -1,6 +1,7 @@
 package com.example.final_project.views.activity;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -21,6 +22,7 @@ import com.example.final_project.R;
 import com.example.final_project.BuildConfig;
 import com.example.final_project.models.entity.Recipe;
 import com.example.final_project.utils.DatabaseConnection;
+import com.example.final_project.utils.UserSessionManager;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -58,6 +60,7 @@ public class CreateRecipeActivity extends AppCompatActivity {
     private final ExecutorService uploadExecutor = Executors.newSingleThreadExecutor();
     private String menuId;
     private Recipe editingRecipe = null;
+    private ProgressDialog progressDialog;
 
     // --- New fields for ingredient handling ---
     private Spinner spFoodItem;
@@ -160,6 +163,9 @@ public class CreateRecipeActivity extends AppCompatActivity {
 
         btnChooseImage.setOnClickListener(v -> openImagePicker());
         btnSaveRecipe.setOnClickListener(v -> saveRecipe());
+
+        // Allow clicking on the image to change it
+        imageRecipePreview.setOnClickListener(v -> openImagePicker());
 
         // Load units and food items from DB
         loadUnitsAndFoodItems();
@@ -285,9 +291,14 @@ public class CreateRecipeActivity extends AppCompatActivity {
     private void loadUnitsAndFoodItems() {
         // Load in background then populate spinners on UI thread
         dbExecutor.execute(() -> {
-            // Note: we don't have a session/user object in this codebase. We'll assume a sample user id "U001".
-            // If your app stores logged-in user elsewhere, replace this accordingly.
-            String userId = "U001";
+            // Get current logged-in user ID from session
+            String userId = UserSessionManager.getInstance(this).getCurrentUserId();
+            if (userId == null || userId.isEmpty()) {
+                android.util.Log.e("CreateRecipeActivity", "User not logged in");
+                runOnUiThread(() -> Toast.makeText(this, "User not logged in!", Toast.LENGTH_SHORT).show());
+                return;
+            }
+
             try (Connection conn = DatabaseConnection.getConnection()) {
                 if (conn == null) return;
 
@@ -377,6 +388,8 @@ public class CreateRecipeActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == PICK_IMAGE_REQUEST && resultCode == Activity.RESULT_OK && data != null && data.getData() != null) {
             imageUri = data.getData();
+            android.util.Log.d("CreateRecipeActivity", "Image selected: " + imageUri.toString());
+
             try {
                 // Try to persist URI permission so later Activities (e.g., RecipeListActivity) can read it
                 try {
@@ -408,11 +421,29 @@ public class CreateRecipeActivity extends AppCompatActivity {
                     android.util.Log.w("CreateRecipeActivity", "Could not take persistable uri permission", se);
                 }
 
+                // Load and display the selected image immediately
                 Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
-                imageRecipePreview.setImageBitmap(bitmap);
+                if (bitmap != null) {
+                    imageRecipePreview.setImageBitmap(bitmap);
+                    // Force refresh the ImageView
+                    imageRecipePreview.invalidate();
+                    imageRecipePreview.requestLayout();
+
+                    // Show success feedback
+                    Toast.makeText(this, "✅ Đã chọn ảnh mới", Toast.LENGTH_SHORT).show();
+                    android.util.Log.d("CreateRecipeActivity", "Image loaded and displayed successfully");
+                } else {
+                    Toast.makeText(this, "⚠️ Không thể tải ảnh", Toast.LENGTH_SHORT).show();
+                    android.util.Log.e("CreateRecipeActivity", "Bitmap is null after loading");
+                }
             } catch (IOException e) {
                 android.util.Log.e("CreateRecipeActivity", "Error loading picked image", e);
+                Toast.makeText(this, "❌ Lỗi khi tải ảnh: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                // Show placeholder on error
+                imageRecipePreview.setImageResource(R.drawable.ic_food_placeholder);
             }
+        } else {
+            android.util.Log.w("CreateRecipeActivity", "Image selection cancelled or invalid");
         }
     }
 
@@ -483,11 +514,8 @@ public class CreateRecipeActivity extends AppCompatActivity {
             return;
         }
 
-        // Chỉ kiểm tra menuId khi tạo mới recipe, không cần khi edit
-        if (editingRecipe == null && (menuId == null || menuId.isEmpty())) {
-            Toast.makeText(this, "Menu ID is missing!", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        // Note: menuId can be null - this means creating a standalone recipe (not attached to any menu yet)
+        android.util.Log.d("CreateRecipeActivity", "Saving recipe. MenuId: " + (menuId != null ? menuId : "null (standalone recipe)"));
 
         // Determine whether we need to upload the selected image to Cloudinary.
         final String currentImageString = (imageUri != null) ? imageUri.toString() : (editingRecipe != null ? editingRecipe.getImageUrl() : null);
@@ -501,8 +529,13 @@ public class CreateRecipeActivity extends AppCompatActivity {
         }
 
         if (needsUpload) {
-            // Upload in background then save to DB
-            Toast.makeText(this, "Uploading image...", Toast.LENGTH_SHORT).show();
+            // Show progress dialog
+            progressDialog = new ProgressDialog(this);
+            progressDialog.setMessage("Đang upload ảnh...");
+            progressDialog.setCancelable(false);
+            progressDialog.show();
+
+            Toast.makeText(this, "Đang upload ảnh...", Toast.LENGTH_SHORT).show();
             final Uri toUpload = imageUri;
             uploadExecutor.execute(() -> {
                 File temp = uriToTempFile(toUpload);
@@ -511,14 +544,33 @@ public class CreateRecipeActivity extends AppCompatActivity {
                     // Best-effort delete temp file
                     try { temp.delete(); } catch (Exception ignore) {}
                 }
+
+                // Update progress
+                runOnUiThread(() -> {
+                    if (progressDialog != null && progressDialog.isShowing()) {
+                        progressDialog.setMessage("Đang lưu recipe...");
+                    }
+                });
+
                 if (uploadedUrl == null) {
-                    runOnUiThread(() -> Toast.makeText(CreateRecipeActivity.this, "Image upload failed. Recipe not saved.", Toast.LENGTH_LONG).show());
+                    runOnUiThread(() -> {
+                        if (progressDialog != null && progressDialog.isShowing()) {
+                            progressDialog.dismiss();
+                        }
+                        Toast.makeText(CreateRecipeActivity.this, "❌ Upload ảnh thất bại. Recipe không được lưu.", Toast.LENGTH_LONG).show();
+                    });
                     return;
                 }
                 // proceed to save with uploadedUrl
                 performDatabaseSave(name, instruction, nutrition, uploadedUrl);
             });
         } else {
+            // No upload required - show progress for DB save
+            progressDialog = new ProgressDialog(this);
+            progressDialog.setMessage("Đang lưu recipe...");
+            progressDialog.setCancelable(false);
+            progressDialog.show();
+
             // No upload required (either no image selected or image is already a web URL)
             performDatabaseSave(name, instruction, nutrition, currentImageString);
         }
@@ -529,18 +581,36 @@ public class CreateRecipeActivity extends AppCompatActivity {
         dbExecutor.execute(() -> {
             try (Connection conn = com.example.final_project.utils.DatabaseConnection.getConnection()) {
                 if (conn == null) {
-                    runOnUiThread(() -> Toast.makeText(this, "Database connection failed!", Toast.LENGTH_SHORT).show());
+                    runOnUiThread(() -> {
+                        if (progressDialog != null && progressDialog.isShowing()) {
+                            progressDialog.dismiss();
+                        }
+                        Toast.makeText(this, "❌ Không thể kết nối database!", Toast.LENGTH_SHORT).show();
+                    });
                     return;
                 }
                 if (editingRecipe != null && editingRecipe.getRecipeId() != null) {
-                    // UPDATE Recipe
-                    String sqlUpdate = "UPDATE Recipe SET name=?, instruction=?, nutrition=?, image_url=? WHERE recipe_id=?";
+                    // Get current logged-in user ID
+                    String currentUserId = UserSessionManager.getInstance(this).getCurrentUserId();
+                    if (currentUserId == null || currentUserId.isEmpty()) {
+                        runOnUiThread(() -> {
+                            if (progressDialog != null && progressDialog.isShowing()) {
+                                progressDialog.dismiss();
+                            }
+                            Toast.makeText(this, "❌ User not logged in!", Toast.LENGTH_SHORT).show();
+                        });
+                        return;
+                    }
+
+                    // UPDATE Recipe with user_id and update_at
+                    String sqlUpdate = "UPDATE Recipe SET name=?, instruction=?, nutrition=?, image_url=?, user_id=?, update_at=NOW() WHERE recipe_id=?";
                     try (PreparedStatement stmt = conn.prepareStatement(sqlUpdate)) {
                         stmt.setString(1, name);
                         stmt.setString(2, instruction);
                         stmt.setString(3, nutrition);
                         stmt.setString(4, imageUrl != null ? imageUrl : "");
-                        stmt.setString(5, editingRecipe.getRecipeId());
+                        stmt.setString(5, currentUserId);
+                        stmt.setString(6, editingRecipe.getRecipeId());
                         int rowsAffected = stmt.executeUpdate();
                         android.util.Log.d("CreateRecipeActivity", "Updated recipe " + editingRecipe.getRecipeId() + ", rows affected: " + rowsAffected);
                     }
@@ -553,16 +623,31 @@ public class CreateRecipeActivity extends AppCompatActivity {
                     insertIngredientsForRecipe(conn, editingRecipe.getRecipeId());
 
                     runOnUiThread(() -> {
-                        Toast.makeText(this, "Recipe updated!", Toast.LENGTH_SHORT).show();
+                        if (progressDialog != null && progressDialog.isShowing()) {
+                            progressDialog.dismiss();
+                        }
+                        Toast.makeText(this, "✅ Recipe đã được cập nhật!", Toast.LENGTH_SHORT).show();
                         Intent res = new Intent();
                         res.putExtra("ingredients_updated", true);
                         setResult(Activity.RESULT_OK, res);
                         finish();
                     });
                 } else {
+                    // ...existing code for INSERT...
+                    // Get current logged-in user ID
+                    String currentUserId = UserSessionManager.getInstance(this).getCurrentUserId();
+                    if (currentUserId == null || currentUserId.isEmpty()) {
+                        runOnUiThread(() -> {
+                            if (progressDialog != null && progressDialog.isShowing()) {
+                                progressDialog.dismiss();
+                            }
+                            Toast.makeText(this, "❌ User not logged in!", Toast.LENGTH_SHORT).show();
+                        });
+                        return;
+                    }
+
                     // Generate sequential recipe_id like R001, R002, ... by checking existing IDs in DB
                     String recipeId;
-                    String recipeMenuId;
                     try (PreparedStatement stmtMax = conn.prepareStatement(
                             "SELECT MAX(CAST(SUBSTRING(recipe_id,2) AS UNSIGNED)) AS maxnum FROM Recipe WHERE recipe_id REGEXP '^R[0-9]+'") ) {
                         try (java.sql.ResultSet rsMax = stmtMax.executeQuery()) {
@@ -575,44 +660,64 @@ public class CreateRecipeActivity extends AppCompatActivity {
                             recipeId = String.format(Locale.US, "R%03d", next);
                         }
                     }
-                    // Generate sequential recipeMenu_id like RM001, RM002, ...
-                    try (PreparedStatement stmtMaxRM = conn.prepareStatement(
-                            "SELECT MAX(CAST(SUBSTRING(recipeMenu_id,3) AS UNSIGNED)) AS maxnum FROM RecipeInMenu WHERE recipeMenu_id REGEXP '^RM[0-9]+'")) {
-                        try (java.sql.ResultSet rsMaxRM = stmtMaxRM.executeQuery()) {
-                            int maxrm = 0;
-                            if (rsMaxRM.next()) {
-                                maxrm = rsMaxRM.getInt("maxnum");
-                                if (rsMaxRM.wasNull()) maxrm = 0;
-                            }
-                            int nextrm = maxrm + 1;
-                            // Use 2-digit format (RM01, RM02, ...) to match existing original data
-                            recipeMenuId = String.format(Locale.US, "RM%02d", nextrm);
-                        }
-                    }
-                    // Insert vào Recipe
-                    String sqlRecipe = "INSERT INTO Recipe (recipe_id, name, instruction, nutrition, image_url) VALUES (?, ?, ?, ?, ?)";
+
+                    // Insert vào Recipe với user_id
+                    String sqlRecipe = "INSERT INTO Recipe (recipe_id, name, instruction, nutrition, image_url, user_id, create_at, update_at) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())";
                     try (PreparedStatement stmt = conn.prepareStatement(sqlRecipe)) {
                         stmt.setString(1, recipeId);
                         stmt.setString(2, name);
                         stmt.setString(3, instruction);
                         stmt.setString(4, nutrition);
                         stmt.setString(5, imageUrl != null ? imageUrl : "");
+                        stmt.setString(6, currentUserId);
                         stmt.executeUpdate();
+                        android.util.Log.d("CreateRecipeActivity", "Inserted recipe: " + recipeId + " for user: " + currentUserId);
                     }
-                    // Insert vào RecipeInMenu - Fixed: use recipeMenu_id (with underscore) not recipeMenuId
-                    String sqlRecipeInMenu = "INSERT INTO RecipeInMenu (recipeMenu_id, recipe_id, menu_id) VALUES (?, ?, ?)";
-                    try (PreparedStatement stmt = conn.prepareStatement(sqlRecipeInMenu)) {
-                        stmt.setString(1, recipeMenuId);
-                        stmt.setString(2, recipeId);
-                        stmt.setString(3, menuId);
-                        stmt.executeUpdate();
+
+                    // Only insert into RecipeInMenu if menuId is provided
+                    if (menuId != null && !menuId.isEmpty()) {
+                        // ...existing code for RecipeInMenu...
+                        // Generate sequential recipeMenu_id like RM001, RM002, ...
+                        String recipeMenuId;
+                        try (PreparedStatement stmtMaxRM = conn.prepareStatement(
+                                "SELECT MAX(CAST(SUBSTRING(recipeMenu_id,3) AS UNSIGNED)) AS maxnum FROM RecipeInMenu WHERE recipeMenu_id REGEXP '^RM[0-9]+'")) {
+                            try (java.sql.ResultSet rsMaxRM = stmtMaxRM.executeQuery()) {
+                                int maxrm = 0;
+                                if (rsMaxRM.next()) {
+                                    maxrm = rsMaxRM.getInt("maxnum");
+                                    if (rsMaxRM.wasNull()) maxrm = 0;
+                                }
+                                int nextrm = maxrm + 1;
+                                // Use 2-digit format (RM01, RM02, ...) to match existing original data
+                                recipeMenuId = String.format(Locale.US, "RM%02d", nextrm);
+                            }
+                        }
+
+                        // Insert vào RecipeInMenu
+                        String sqlRecipeInMenu = "INSERT INTO RecipeInMenu (recipeMenu_id, recipe_id, menu_id) VALUES (?, ?, ?)";
+                        try (PreparedStatement stmt = conn.prepareStatement(sqlRecipeInMenu)) {
+                            stmt.setString(1, recipeMenuId);
+                            stmt.setString(2, recipeId);
+                            stmt.setString(3, menuId);
+                            stmt.executeUpdate();
+                            android.util.Log.d("CreateRecipeActivity", "Linked recipe to menu: " + recipeMenuId);
+                        }
+                    } else {
+                        android.util.Log.d("CreateRecipeActivity", "No menuId provided - created standalone recipe");
                     }
 
                     // Insert ingredients for the new recipe
                     insertIngredientsForRecipe(conn, recipeId);
 
+                    final String successMessage = (menuId != null && !menuId.isEmpty())
+                        ? "✅ Recipe '" + name + "' đã được tạo và thêm vào menu!"
+                        : "✅ Recipe '" + name + "' đã được tạo thành công!";
+
                     runOnUiThread(() -> {
-                        Toast.makeText(this, "Recipe '" + name + "' created and added to menu!", Toast.LENGTH_SHORT).show();
+                        if (progressDialog != null && progressDialog.isShowing()) {
+                            progressDialog.dismiss();
+                        }
+                        Toast.makeText(this, successMessage, Toast.LENGTH_LONG).show();
                         Intent res = new Intent();
                         res.putExtra("ingredients_updated", true);
                         setResult(Activity.RESULT_OK, res);
@@ -621,7 +726,12 @@ public class CreateRecipeActivity extends AppCompatActivity {
                 }
             } catch (Exception e) {
                 android.util.Log.e("CreateRecipeActivity", "Error saving recipe", e);
-                runOnUiThread(() -> Toast.makeText(this, "Error saving recipe!", Toast.LENGTH_SHORT).show());
+                runOnUiThread(() -> {
+                    if (progressDialog != null && progressDialog.isShowing()) {
+                        progressDialog.dismiss();
+                    }
+                    Toast.makeText(this, "❌ Lỗi khi lưu recipe: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                });
             }
         });
     }

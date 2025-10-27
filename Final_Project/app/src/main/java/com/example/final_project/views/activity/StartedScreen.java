@@ -9,6 +9,7 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.final_project.R;
+import com.example.final_project.utils.UserSessionManager;
 
 public class StartedScreen extends AppCompatActivity {
 
@@ -18,6 +19,17 @@ public class StartedScreen extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Check if user is already logged in
+        UserSessionManager sessionManager = UserSessionManager.getInstance(this);
+        if (sessionManager.isLoggedIn()) {
+            // User is already logged in, skip to HomeMenuActivity
+            Intent intent = new Intent(StartedScreen.this, HomeMenuActivity.class);
+            startActivity(intent);
+            finish(); // Close StartedScreen so user can't go back
+            return; // Important: stop further execution
+        }
+
         setContentView(R.layout.startedscreen);
 
         // Ánh xạ view

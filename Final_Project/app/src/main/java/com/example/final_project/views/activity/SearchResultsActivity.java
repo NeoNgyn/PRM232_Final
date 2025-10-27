@@ -166,7 +166,7 @@ public class SearchResultsActivity extends AppCompatActivity {
             try (Connection conn = DatabaseConnection.getConnection()) {
                 if (conn == null) throw new SQLException("DB connection is null");
 
-                // Search for Menus
+                // Search for Menus - Only search by menu_name
                 String menuSql;
                 if (searchQuery.isEmpty()) {
                     // Show all menus when search is empty
@@ -175,10 +175,10 @@ public class SearchResultsActivity extends AppCompatActivity {
                             "WHERE user_id = ? " +
                             "ORDER BY create_at DESC";
                 } else {
-                    // Search with filter
+                    // Search only by menu_name (not description)
                     menuSql = "SELECT menu_id, menu_name, image_url, description, from_date, to_date " +
                             "FROM Menu " +
-                            "WHERE user_id = ? AND (LOWER(menu_name) LIKE ? OR LOWER(description) LIKE ?) " +
+                            "WHERE user_id = ? AND LOWER(menu_name) LIKE ? " +
                             "ORDER BY create_at DESC";
                 }
 
@@ -187,7 +187,6 @@ public class SearchResultsActivity extends AppCompatActivity {
                     if (!searchQuery.isEmpty()) {
                         String searchPattern = "%" + searchQuery.toLowerCase() + "%";
                         stmt.setString(2, searchPattern);
-                        stmt.setString(3, searchPattern);
                     }
 
                     try (ResultSet rs = stmt.executeQuery()) {
@@ -205,7 +204,7 @@ public class SearchResultsActivity extends AppCompatActivity {
                     }
                 }
 
-                // Search for Recipes
+                // Search for Recipes - Only search by recipe name
                 String recipeSql;
                 if (searchQuery.isEmpty()) {
                     // Show all recipes when search is empty
@@ -217,13 +216,13 @@ public class SearchResultsActivity extends AppCompatActivity {
                             "WHERE m.user_id = ? " +
                             "ORDER BY r.recipe_id DESC";
                 } else {
-                    // Search with filter
+                    // Search only by recipe name (not instruction)
                     recipeSql = "SELECT DISTINCT r.recipe_id, r.name AS recipe_name, r.instruction, " +
                             "r.nutrition, r.image_url " +
                             "FROM Recipe r " +
                             "JOIN RecipeInMenu rim ON r.recipe_id = rim.recipe_id " +
                             "JOIN Menu m ON rim.menu_id = m.menu_id " +
-                            "WHERE m.user_id = ? AND (LOWER(r.name) LIKE ? OR LOWER(r.instruction) LIKE ?) " +
+                            "WHERE m.user_id = ? AND LOWER(r.name) LIKE ? " +
                             "ORDER BY r.recipe_id DESC";
                 }
 
@@ -232,7 +231,6 @@ public class SearchResultsActivity extends AppCompatActivity {
                     if (!searchQuery.isEmpty()) {
                         String searchPattern = "%" + searchQuery.toLowerCase() + "%";
                         stmt.setString(2, searchPattern);
-                        stmt.setString(3, searchPattern);
                     }
 
                     try (ResultSet rs = stmt.executeQuery()) {
