@@ -48,6 +48,7 @@
         <activity android:name=".views.activity.RecipeDetailActivity" />
         <activity android:name=".views.activity.MealDetailActivity" />
         <activity android:name=".views.activity.FoodResultActivity" />
+        <activity android:name=".views.activity.ChatActivity" />
 
         <!-- 🔹 Thêm dòng này -->
         <activity android:name=".views.activity.FridgeInventoryActivity" />
