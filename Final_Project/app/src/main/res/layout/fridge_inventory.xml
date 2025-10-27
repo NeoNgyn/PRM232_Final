@@ -209,41 +209,41 @@
     </LinearLayout>
 
         <!-- Bottom Navigation Bar -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:background="@android:color/white"
-            android:elevation="8dp"
-            android:padding="12dp"
-            android:gravity="center">
+<!--        <LinearLayout-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:orientation="horizontal"-->
+<!--            android:background="@android:color/white"-->
+<!--            android:elevation="8dp"-->
+<!--            android:padding="12dp"-->
+<!--            android:gravity="center">-->
 
-            <!-- Menu Button -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnMenuNav"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_weight="1"
-                android:text="🍽️ Menu"
-                android:textSize="12sp"
-                android:textColor="@android:color/white"
-                android:layout_marginEnd="8dp"
-                app:backgroundTint="#2196F3"
-                app:cornerRadius="8dp"
-                style="@style/Widget.MaterialComponents.Button" />
+<!--            &lt;!&ndash; Menu Button &ndash;&gt;-->
+<!--            <com.google.android.material.button.MaterialButton-->
+<!--                android:id="@+id/btnMenuNav"-->
+<!--                android:layout_width="0dp"-->
+<!--                android:layout_height="48dp"-->
+<!--                android:layout_weight="1"-->
+<!--                android:text="🍽️ Menu"-->
+<!--                android:textSize="12sp"-->
+<!--                android:textColor="@android:color/white"-->
+<!--                android:layout_marginEnd="8dp"-->
+<!--                app:backgroundTint="#2196F3"-->
+<!--                app:cornerRadius="8dp"-->
+<!--                style="@style/Widget.MaterialComponents.Button" />-->
 
-            <!-- Fridge Button -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnFridgeNav"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_weight="1"
-                android:text="🍒 Tủ Lạnh"
-                android:textSize="12sp"
-                android:textColor="@android:color/white"
-                app:backgroundTint="#4CAF50"
-                app:cornerRadius="8dp"
-                style="@style/Widget.MaterialComponents.Button" />
+<!--            &lt;!&ndash; Fridge Button &ndash;&gt;-->
+<!--            <com.google.android.material.button.MaterialButton-->
+<!--                android:id="@+id/btnFridgeNav"-->
+<!--                android:layout_width="0dp"-->
+<!--                android:layout_height="48dp"-->
+<!--                android:layout_weight="1"-->
+<!--                android:text="🍒 Tủ Lạnh"-->
+<!--                android:textSize="12sp"-->
+<!--                android:textColor="@android:color/white"-->
+<!--                app:backgroundTint="#4CAF50"-->
+<!--                app:cornerRadius="8dp"-->
+<!--                style="@style/Widget.MaterialComponents.Button" />-->
 
             <!-- Logout Button - COMMENTED OUT, moved to Home Menu Activity Avatar Menu -->
             <!--<com.google.android.material.button.MaterialButton
@@ -257,6 +257,32 @@
                 app:backgroundTint="#F44336"
                 app:cornerRadius="8dp"
                 style="@style/Widget.MaterialComponents.Button" />-->
+    <!-- Nút camera nổi -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/btn_camera"
+        android:layout_width="62dp"
+        android:layout_height="62dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="-70dp"
+        android:src="@drawable/ic_camera"
+        android:backgroundTint="#E4E4E4"
+        android:tint="@color/purple_500"
+        android:elevation="10dp"
+        app:maxImageSize="32dp"
+        app:layout_anchor="@id/bottom_navbar"
+        app:layout_anchorGravity="top|center" />
 
-        </LinearLayout>
+    <!-- Bottom Navigation -->
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottom_navbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_bottom_nav_with_curve"
+        android:elevation="8dp"
+        app:menu="@menu/menu_bottom_nav"
+        app:itemIconTint="@color/nav_item_color"
+        app:itemTextColor="@color/nav_item_color"
+        app:labelVisibilityMode="labeled" />
+
+<!--        </LinearLayout>-->
 </LinearLayout>

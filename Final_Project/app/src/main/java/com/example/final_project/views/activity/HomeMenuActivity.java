@@ -100,13 +100,13 @@ public class HomeMenuActivity extends AppCompatActivity {
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
         });
 
-        LinearLayout btnAI = findViewById(R.id.btn_ai);
-
-        btnAI.setOnClickListener(v -> {
-            Intent intent = new Intent(HomeMenuActivity.this, ChatActivity.class);
-            startActivity(intent);
-            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-        });
+//        LinearLayout btnAI = findViewById(R.id.btn_ai);
+//
+//        btnAI.setOnClickListener(v -> {
+//            Intent intent = new Intent(HomeMenuActivity.this, ChatActivity.class);
+//            startActivity(intent);
+//            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+//        });
 
         fabAddMenu = findViewById(R.id.fabAddMenu);
         fabAddMenu.setOnClickListener(v -> showCreateMenu(v));
