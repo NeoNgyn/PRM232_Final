@@ -210,27 +210,37 @@ public class MealDetailActivity extends AppCompatActivity {
             try (Connection conn = DatabaseConnection.getConnection()) {
                 if (conn == null) throw new SQLException("DB connection is null");
                 String recipeId = recipe != null ? recipe.getRecipeId() : null;
-                int affected = 0;
-                // Xóa khỏi RecipeInMenu
-                if (recipeId != null) {
-                    String sql = "DELETE FROM RecipeInMenu WHERE recipe_id = ?";
-                    try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                        stmt.setString(1, recipeId);
-                        affected = stmt.executeUpdate();
-                    }
+                if (recipeId == null) {
+                    runOnUiThread(() -> onError.accept("Recipe ID is null"));
+                    return;
                 }
-                // Xóa khỏi Recipe
-                if (recipeId != null) {
-                    String sql = "DELETE FROM Recipe WHERE recipe_id = ?";
-                    try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                        stmt.setString(1, recipeId);
-                        stmt.executeUpdate();
-                    }
+
+                // Xóa theo thứ tự: Ingredient -> RecipeInMenu -> Recipe
+                // 1. Xóa khỏi Ingredient (foreign key constraint)
+                String sqlIngredient = "DELETE FROM Ingredient WHERE recipe_id = ?";
+                try (PreparedStatement stmt = conn.prepareStatement(sqlIngredient)) {
+                    stmt.setString(1, recipeId);
+                    int ingredientDeleted = stmt.executeUpdate();
+                    Log.d("MealDetailActivity", "Deleted " + ingredientDeleted + " ingredients for recipe: " + recipeId);
                 }
-                if (affected > 0) {
-                    runOnUiThread(onSuccess);
-                } else {
-                    runOnUiThread(() -> onError.accept("Không tìm thấy hoặc xóa không thành công."));
+
+                // 2. Xóa khỏi RecipeInMenu
+                String sqlRecipeInMenu = "DELETE FROM RecipeInMenu WHERE recipe_id = ?";
+                try (PreparedStatement stmt = conn.prepareStatement(sqlRecipeInMenu)) {
+                    stmt.setString(1, recipeId);
+                    stmt.executeUpdate();
+                }
+
+                // 3. Xóa khỏi Recipe
+                String sqlRecipe = "DELETE FROM Recipe WHERE recipe_id = ?";
+                try (PreparedStatement stmt = conn.prepareStatement(sqlRecipe)) {
+                    stmt.setString(1, recipeId);
+                    int affected = stmt.executeUpdate();
+                    if (affected > 0) {
+                        runOnUiThread(onSuccess);
+                    } else {
+                        runOnUiThread(() -> onError.accept("Không tìm thấy recipe để xóa."));
+                    }
                 }
             } catch (Exception e) {
                 Log.e("MealDetailActivity", "Error deleting recipe", e);
