@@ -7,7 +7,10 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.view.KeyEvent;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -29,7 +32,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
@@ -171,6 +173,43 @@ public class CreateRecipeActivity extends AppCompatActivity {
         loadUnitsAndFoodItems();
 
         btnAddIngredient.setOnClickListener(v -> onAddIngredientClicked());
+
+        // --- NEW: handle IME actions for Enter key navigation and actions ---
+        etRecipeName.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_NEXT || (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN)) {
+                etRecipeInstruction.requestFocus();
+                return true;
+            }
+            return false;
+        });
+
+        etRecipeInstruction.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_NEXT || (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN)) {
+                etRecipeNutrition.requestFocus();
+                return true;
+            }
+            return false;
+        });
+
+        etRecipeNutrition.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_DONE || (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN)) {
+                // hide keyboard and move focus to ingredient amount
+                hideKeyboard();
+                etIngredientAmount.requestFocus();
+                return true;
+            }
+            return false;
+        });
+
+        etIngredientAmount.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_DONE || (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN)) {
+                hideKeyboard();
+                // Just hide keyboard and keep the number visible in the field (don't add to list yet)
+                // User will press Add button when ready to add ingredient
+                return true;
+            }
+            return false;
+        });
     }
 
     @Override
@@ -198,6 +237,19 @@ public class CreateRecipeActivity extends AppCompatActivity {
             result = getResources().getDimensionPixelSize(resourceId);
         }
         return result;
+    }
+
+    // Helper to hide keyboard
+    private void hideKeyboard() {
+        try {
+            InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+            View current = getCurrentFocus();
+            if (imm != null && current != null) {
+                imm.hideSoftInputFromWindow(current.getWindowToken(), 0);
+            }
+        } catch (Exception e) {
+            android.util.Log.w("CreateRecipeActivity", "hideKeyboard failed", e);
+        }
     }
 
     // Load existing ingredient rows when editing a recipe (if editingRecipe != null)
@@ -234,6 +286,7 @@ public class CreateRecipeActivity extends AppCompatActivity {
     }
 
     private void onAddIngredientClicked() {
+        // Original behavior: add current field value and refresh
         int foodPos = spFoodItem.getSelectedItemPosition();
         String amount = etIngredientAmount.getText().toString().trim();
         if (foodPos < 0 || foodPos >= foodItemIds.size()) {
@@ -245,11 +298,8 @@ public class CreateRecipeActivity extends AppCompatActivity {
             return;
         }
 
-        // Get food item details
         String foodId = foodItemIds.get(foodPos);
         String foodName = foodItemNames.get(foodPos);
-
-        // Get unit from the FoodItem itself, not from separate spinner
         Integer unitId = foodPos < foodItemUnitIds.size() ? foodItemUnitIds.get(foodPos) : null;
         String unitName = foodPos < foodItemUnitNames.size() ? foodItemUnitNames.get(foodPos) : "";
 
@@ -257,7 +307,6 @@ public class CreateRecipeActivity extends AppCompatActivity {
         ingredientsList.add(entry);
         etIngredientAmount.setText("");
         refreshIngredientsUI();
-
         android.util.Log.d("CreateRecipeActivity", "Added ingredient: " + amount + " " + unitName + " " + foodName);
     }
 
@@ -513,6 +562,8 @@ public class CreateRecipeActivity extends AppCompatActivity {
             Toast.makeText(this, "Please fill all required fields", Toast.LENGTH_SHORT).show();
             return;
         }
+
+        // (no pending buffer used) -- proceed to save directly
 
         // Note: menuId can be null - this means creating a standalone recipe (not attached to any menu yet)
         android.util.Log.d("CreateRecipeActivity", "Saving recipe. MenuId: " + (menuId != null ? menuId : "null (standalone recipe)"));

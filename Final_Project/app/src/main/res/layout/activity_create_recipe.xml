@@ -77,7 +77,11 @@
                 android:backgroundTint="#FF8C00"
                 android:textColor="#000"
                 android:textColorHint="#999"
-                android:padding="10dp" />
+                android:padding="10dp"
+                android:imeOptions="actionNext"
+                android:inputType="text"
+                android:maxLines="1"
+                android:nextFocusDown="@id/etRecipeInstruction" />
 
             <EditText
                 android:id="@+id/etRecipeInstruction"
@@ -88,7 +92,11 @@
                 android:backgroundTint="#FF8C00"
                 android:textColor="#000"
                 android:textColorHint="#999"
-                android:padding="10dp" />
+                android:padding="10dp"
+                android:imeOptions="actionNext"
+                android:inputType="text"
+                android:maxLines="1"
+                android:nextFocusDown="@id/etRecipeNutrition" />
 
             <EditText
                 android:id="@+id/etRecipeNutrition"
@@ -99,7 +107,11 @@
                 android:backgroundTint="#FF8C00"
                 android:textColor="#000"
                 android:textColorHint="#999"
-                android:padding="10dp" />
+                android:padding="10dp"
+                android:imeOptions="actionDone"
+                android:inputType="text"
+                android:maxLines="1"
+                android:nextFocusDown="@id/spFoodItem" />
 
             <!-- Ingredient selection area -->
             <TextView
@@ -133,7 +145,10 @@
                     android:hint="Amount"
                     android:inputType="numberDecimal"
                     android:padding="8dp"
-                    android:layout_marginStart="8dp" />
+                    android:layout_marginStart="8dp"
+                    android:imeOptions="actionDone"
+                    android:maxLines="1"
+                    android:nextFocusDown="@id/btnAddIngredient" />
 
                 <Spinner
                     android:id="@+id/spUnit"

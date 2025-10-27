@@ -6,6 +6,9 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.view.KeyEvent;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -90,6 +93,39 @@ public class CreateMenuActivity extends AppCompatActivity {
         recyclerSelectedRecipes.setLayoutManager(new LinearLayoutManager(this));
         selectedRecipeAdapter = new SelectedRecipeAdapter(selectedRecipes, this::onRemoveRecipeClicked);
         recyclerSelectedRecipes.setAdapter(selectedRecipeAdapter);
+
+        // --- NEW: Setup IME action listeners for Enter key handling ---
+        etMenuName.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_NEXT || (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
+                etMenuDescription.requestFocus();
+                return true;
+            }
+            return false;
+        });
+
+        etMenuDescription.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_NEXT || (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
+                findViewById(R.id.etMenuNote).requestFocus();
+                return true;
+            }
+            return false;
+        });
+
+        EditText etMenuNote = findViewById(R.id.etMenuNote);
+        if (etMenuNote != null) {
+            etMenuNote.setOnEditorActionListener((v, actionId, event) -> {
+                if (actionId == EditorInfo.IME_ACTION_DONE || (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
+                    // Hide keyboard when Done is pressed on Note field
+                    InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+                    if (imm != null && getCurrentFocus() != null) {
+                        imm.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
+                    }
+                    etMenuNote.clearFocus();
+                    return true;
+                }
+                return false;
+            });
+        }
 
         btnUploadImage.setOnClickListener(v -> openImagePicker());
         btnSaveMenu.setOnClickListener(v -> saveMenu());

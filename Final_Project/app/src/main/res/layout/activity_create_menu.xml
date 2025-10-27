@@ -47,7 +47,11 @@
             android:hint="Menu name"
             android:background="@drawable/bg_white_rounded"
             android:padding="12dp"
-            android:layout_marginBottom="12dp"/>
+            android:layout_marginBottom="12dp"
+            android:imeOptions="actionNext"
+            android:inputType="text"
+            android:maxLines="1"
+            android:nextFocusDown="@id/etMenuDescription"/>
 
         <!-- Description -->
         <EditText
@@ -57,8 +61,11 @@
             android:hint="Description"
             android:background="@drawable/bg_white_rounded"
             android:padding="12dp"
-            android:inputType="textMultiLine"
-            android:layout_marginBottom="12dp"/>
+            android:layout_marginBottom="12dp"
+            android:imeOptions="actionNext"
+            android:inputType="text"
+            android:maxLines="1"
+            android:nextFocusDown="@id/etMenuNote"/>
 
         <!-- Note -->
         <EditText
@@ -68,7 +75,10 @@
             android:hint="Note (optional)"
             android:background="@drawable/bg_white_rounded"
             android:padding="12dp"
-            android:layout_marginBottom="12dp"/>
+            android:layout_marginBottom="12dp"
+            android:imeOptions="actionDone"
+            android:inputType="text"
+            android:maxLines="1"/>
 
         <!-- From Date -->
         <TextView
