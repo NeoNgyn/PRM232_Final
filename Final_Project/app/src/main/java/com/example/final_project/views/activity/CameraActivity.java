@@ -2,7 +2,10 @@ package com.example.final_project.views.activity;
 
 import android.Manifest;
 import android.content.ContentValues;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.view.View;
@@ -22,11 +25,24 @@ import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import com.example.final_project.R;
+import com.example.final_project.models.dto.LogMealResponse;
+import com.example.final_project.network.FoodApiService;
+import com.example.final_project.utils.FileUtils;
+import com.example.final_project.utils.FoodApiClient;
 import com.google.common.util.concurrent.ListenableFuture;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
+import retrofit2.Call;
+import retrofit2.Response;
 
 public class CameraActivity extends AppCompatActivity {
 
@@ -171,8 +187,12 @@ public class CameraActivity extends AppCompatActivity {
                             ivPreviewImage.setImageURI(outputFileResults.getSavedUri());
                             ivPreviewImage.setVisibility(View.VISIBLE);
                         }
+
+                        analyzeImage(outputFileResults.getSavedUri());
                     });
                 }
+
+
 
                 @Override
                 public void onError(@NonNull ImageCaptureException exception) {
@@ -240,6 +260,69 @@ public class CameraActivity extends AppCompatActivity {
             }
         }
     }
+
+    private void analyzeImage(Uri imageUri) {
+        tvStatus.setText("🔍 Đang phân tích món ăn...");
+
+        new Thread(() -> {
+            try {
+                // Lấy file từ URI
+                File file = compressImage(imageUri);
+
+                RequestBody requestBody = RequestBody.create(
+                        okhttp3.MediaType.parse("image/jpeg"), file);
+                MultipartBody.Part imagePart = MultipartBody.Part.createFormData(
+                        "image", file.getName(), requestBody);
+
+                // Tạo retrofit instance
+                FoodApiService apiService = FoodApiClient.getClient().create(FoodApiService.class);
+                String token = "Bearer 9d885ef142b2caf972e4c5fa754624c44702aaae"; // ⚠️ Thay bằng token thật
+
+                // Gọi API
+                Call<LogMealResponse> call = apiService.identifyFood(token, imagePart);
+                Response<LogMealResponse> response = call.execute();
+
+                runOnUiThread(() -> {
+                    if (response.isSuccessful() && response.body() != null) {
+                        LogMealResponse logMeal = response.body();
+                        if (logMeal.getRecognition_results() != null && !logMeal.getRecognition_results().isEmpty()) {
+                            String name = logMeal.getRecognition_results().get(0).getName();
+                            double prob = logMeal.getRecognition_results().get(0).getProbability();
+
+                            Intent intent = new Intent(CameraActivity.this, FoodResultActivity.class);
+                            intent.putExtra("imageUri", imageUri.toString());
+                            intent.putExtra("foodName", name);
+                            intent.putExtra("confidence", logMeal.getRecognition_results().get(0).getProbability() * 100);
+                            startActivity(intent);
+                        } else {
+                            tvStatus.setText("❌ Không nhận diện được món ăn.");
+                        }
+                    } else {
+                        tvStatus.setText("❌ Phân tích thất bại: " + response.code());
+                    }
+                });
+
+            } catch (Exception e) {
+                runOnUiThread(() -> tvStatus.setText("Lỗi: " + e.getMessage()));
+            }
+        }).start();
+    }
+
+    private File compressImage(Uri imageUri) throws IOException {
+        // Lấy bitmap từ URI
+        Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
+
+        // Tạo file tạm trong cache
+        File compressedFile = new File(getCacheDir(), "compressed_" + System.currentTimeMillis() + ".jpg");
+        FileOutputStream fos = new FileOutputStream(compressedFile);
+
+        // Nén ảnh xuống ~70% chất lượng (thường còn 1–2 MB)
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 70, fos);
+        fos.close();
+
+        return compressedFile;
+    }
+
 
     @Override
     protected void onDestroy() {
