@@ -1,35 +1,101 @@
-<!-- res/layout/activity_food_result.xml -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center"
-    android:orientation="vertical"
-    android:padding="24dp"
-    android:background="#FFF">
+    android:background="#FAFAFA"
+    android:padding="16dp">
 
-    <ImageView
-        android:id="@+id/ivFood"
-        android:layout_width="300dp"
-        android:layout_height="300dp"
-        android:scaleType="centerCrop"
-        android:layout_marginBottom="20dp" />
-
-    <TextView
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/tvFoodName"
-        android:text="Món ăn"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:textColor="#333"
-        android:layout_marginBottom="8dp" />
+        android:orientation="vertical"
+        android:gravity="center_horizontal">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/tvConfidence"
-        android:text="Độ tin cậy"
-        android:textSize="16sp"
-        android:textColor="#666" />
+        <!-- Ảnh món ăn -->
+        <ImageView
+            android:id="@+id/ivFood"
+            android:layout_width="280dp"
+            android:layout_height="280dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="20dp"
+            android:scaleType="centerCrop"
+            android:background="@drawable/rounded_bg"
+            android:contentDescription="@string/food_image" />
 
-</LinearLayout>
+        <!-- Tên món -->
+        <TextView
+            android:id="@+id/tvFoodName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🍽️ Món ăn"
+            android:textColor="#222"
+            android:textStyle="bold"
+            android:textSize="22sp"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Độ chính xác -->
+        <TextView
+            android:id="@+id/tvConfidence"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🔍 Chính xác: 95%"
+            android:textColor="#555"
+            android:textSize="16sp"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Khung thông tin dinh dưỡng -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/card_bg"
+            android:padding="16dp"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🔬 Thông tin dinh dưỡng"
+                android:textStyle="bold"
+                android:textColor="#2E7D32"
+                android:textSize="18sp"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:id="@+id/tvNutrition"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Đang tải dữ liệu dinh dưỡng..."
+                android:textColor="#333"
+                android:textSize="15sp" />
+        </LinearLayout>
+
+        <!-- Khung gợi ý món tương tự -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/card_bg"
+            android:padding="16dp"
+            android:layout_marginBottom="24dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🥗 Gợi ý món tương tự"
+                android:textStyle="bold"
+                android:textColor="#0277BD"
+                android:textSize="18sp"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:id="@+id/tvRecommend"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Đang tìm gợi ý món ăn..."
+                android:textColor="#333"
+                android:textSize="15sp" />
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>
