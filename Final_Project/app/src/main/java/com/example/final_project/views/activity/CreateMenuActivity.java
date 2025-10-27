@@ -13,6 +13,8 @@ import android.widget.ImageView;
 import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import com.example.final_project.R;
 import com.example.final_project.models.entity.Menu;
 import com.example.final_project.models.entity.Recipe;
@@ -20,6 +22,7 @@ import com.example.final_project.utils.DatabaseConnection;
 import com.example.final_project.utils.UserSessionManager;
 import com.example.final_project.utils.CloudinaryHelper;
 import com.example.final_project.utils.DBMigrationHelper;
+import com.example.final_project.views.adapter.SelectedRecipeAdapter;
 import com.bumptech.glide.Glide;
 
 import androidx.appcompat.app.AlertDialog;
@@ -61,6 +64,10 @@ public class CreateMenuActivity extends AppCompatActivity {
     private List<Recipe> selectedRecipes = new ArrayList<>();
     private Set<String> selectedRecipeIds = new HashSet<>();
 
+    // RecyclerView for selected recipes
+    private RecyclerView recyclerSelectedRecipes;
+    private SelectedRecipeAdapter selectedRecipeAdapter;
+
     private final ExecutorService dbExecutor = Executors.newSingleThreadExecutor();
 
     @Override
@@ -77,6 +84,12 @@ public class CreateMenuActivity extends AppCompatActivity {
         Button btnSaveMenu = findViewById(R.id.btnSaveMenu);
         ImageButton btnBack = findViewById(R.id.btnBack);
         btnAddRecipe = findViewById(R.id.btnAddRecipe);
+
+        // Setup RecyclerView for selected recipes
+        recyclerSelectedRecipes = findViewById(R.id.recyclerRecipeInput);
+        recyclerSelectedRecipes.setLayoutManager(new LinearLayoutManager(this));
+        selectedRecipeAdapter = new SelectedRecipeAdapter(selectedRecipes, this::onRemoveRecipeClicked);
+        recyclerSelectedRecipes.setAdapter(selectedRecipeAdapter);
 
         btnUploadImage.setOnClickListener(v -> openImagePicker());
         btnSaveMenu.setOnClickListener(v -> saveMenu());
@@ -473,7 +486,32 @@ public class CreateMenuActivity extends AppCompatActivity {
                         Toast.makeText(this, "Chưa chọn recipe nào", Toast.LENGTH_SHORT).show();
                     } else {
                         Toast.makeText(this, "Đã chọn " + selectedRecipes.size() + " recipe(s)", Toast.LENGTH_SHORT).show();
+                        // Update RecyclerView to show selected recipes
+                        selectedRecipeAdapter.notifyDataSetChanged();
                     }
+                })
+                .setNegativeButton("Hủy", null)
+                .show();
+    }
+
+    /**
+     * Handle remove recipe button click with confirmation dialog
+     */
+    private void onRemoveRecipeClicked(Recipe recipe, int position) {
+        new AlertDialog.Builder(this)
+                .setTitle("Xóa Recipe")
+                .setMessage("Bạn có chắc chắn muốn xóa \"" + recipe.getName() + "\" khỏi menu không?")
+                .setPositiveButton("Xóa", (dialog, which) -> {
+                    // Remove from lists
+                    selectedRecipes.remove(position);
+                    selectedRecipeIds.remove(recipe.getRecipeId());
+
+                    // Update RecyclerView
+                    selectedRecipeAdapter.notifyItemRemoved(position);
+                    selectedRecipeAdapter.notifyItemRangeChanged(position, selectedRecipes.size());
+
+                    Toast.makeText(this, "Đã xóa \"" + recipe.getName() + "\"", Toast.LENGTH_SHORT).show();
+                    Log.d(TAG, "Removed recipe: " + recipe.getName() + " from selection");
                 })
                 .setNegativeButton("Hủy", null)
                 .show();
