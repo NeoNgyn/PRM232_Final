@@ -62,6 +62,7 @@ public class HomeMenuActivity extends AppCompatActivity {
     private ImageView imgAvatar;
     private ImageView imgSearchIcon;
     private EditText etSearch;
+    private TextView tvGreeting;
 
     // Lưu padding-top gốc của header để không cộng dồn khi onResume
     private int headerOriginalPaddingTop = -1;
@@ -89,10 +90,11 @@ public class HomeMenuActivity extends AppCompatActivity {
         }
 
         fabAddMenu = findViewById(R.id.fabAddMenu);
-        fabAddMenu.setOnClickListener(v -> {
-            Intent intent = new Intent(HomeMenuActivity.this, CreateMenuActivity.class);
-            startActivity(intent);
-        });
+        fabAddMenu.setOnClickListener(v -> showCreateMenu(v));
+
+        // Initialize greeting TextView and set user name
+        tvGreeting = findViewById(R.id.tvGreeting);
+        updateGreeting();
 
         // Initialize navigation buttons
         btnGoToFridge = findViewById(R.id.btnGoToFridge);
@@ -168,6 +170,21 @@ public class HomeMenuActivity extends AppCompatActivity {
             result = getResources().getDimensionPixelSize(resourceId);
         }
         return result;
+    }
+
+    /**
+     * Update greeting message with user's name
+     */
+    private void updateGreeting() {
+        if (tvGreeting != null) {
+            String userName = UserSessionManager.getInstance(this).getCurrentUserName();
+            if (userName != null && !userName.isEmpty()) {
+                tvGreeting.setText("Xin chào, " + userName);
+            } else {
+                // Fallback to generic greeting if name is not available
+                tvGreeting.setText("Xin chào");
+            }
+        }
     }
 
     private void setupTodayMenusRecyclerView() {
@@ -471,6 +488,35 @@ public class HomeMenuActivity extends AppCompatActivity {
                 runOnUiThread(() -> onError.accept(e.getMessage()));
             }
         });
+    }
+
+    /**
+     * Show create menu popup with options for Create Menu and Create Recipe
+     */
+    private void showCreateMenu(View anchor) {
+        PopupMenu popup = new PopupMenu(this, anchor);
+        MenuInflater inflater = popup.getMenuInflater();
+        inflater.inflate(R.menu.menu_create_options, popup.getMenu());
+
+        popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                if (item.getItemId() == R.id.action_create_menu) {
+                    // Navigate to Create Menu Activity
+                    Intent intent = new Intent(HomeMenuActivity.this, CreateMenuActivity.class);
+                    startActivity(intent);
+                    return true;
+                } else if (item.getItemId() == R.id.action_create_recipe) {
+                    // Navigate to Create Recipe Activity
+                    Intent intent = new Intent(HomeMenuActivity.this, CreateRecipeActivity.class);
+                    startActivity(intent);
+                    return true;
+                }
+                return false;
+            }
+        });
+
+        popup.show();
     }
 
     /**
