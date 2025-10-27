@@ -31,6 +31,8 @@ import com.example.final_project.views.adapter.InventoryAdapter;
 import com.example.final_project.utils.CloudinaryHelper;
 import com.example.final_project.utils.DatabaseConnection;
 import com.example.final_project.utils.UserSessionManager;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -83,7 +85,39 @@ public class FridgeInventoryActivity extends AppCompatActivity implements Invent
         setupRecyclerView();
         loadFromDatabase();
         setupListeners();
-        setupNavigationButtons();
+//        setupNavigationButtons();
+
+        // --- Navbar setup ---
+        BottomNavigationView bottomNav = findViewById(R.id.bottom_navbar);
+//        bottomNav.setSelectedItemId(R.id.nav_fridge); // ID trong menu_bottom_nav
+
+        bottomNav.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.nav_home) {
+                Intent intent = new Intent(FridgeInventoryActivity.this, HomeMenuActivity.class);
+                startActivity(intent);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                return true;
+            } else if (id == R.id.nav_ai) {
+                Intent intent = new Intent(FridgeInventoryActivity.this, ChatActivity.class);
+                startActivity(intent);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                return true;
+            }
+//            else if (id == R.id.nav_fridge) {
+//                Toast.makeText(this, "Đang ở Tủ lạnh", Toast.LENGTH_SHORT).show();
+//                return true;
+//            }
+            return false;
+        });
+
+// --- Floating camera button ---
+        FloatingActionButton btnCamera = findViewById(R.id.btn_camera);
+        btnCamera.setOnClickListener(v -> {
+            Intent intent = new Intent(FridgeInventoryActivity.this, CameraActivity.class);
+            startActivity(intent);
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+        });
     }
 
     private void initViews() {
@@ -95,8 +129,8 @@ public class FridgeInventoryActivity extends AppCompatActivity implements Invent
         tvTitle = findViewById(R.id.tvTitle);
         tvTotalFood = findViewById(R.id.tvTotalFood);
         tvNearExpiry = findViewById(R.id.tvNearExpiry);
-        btnMenuNav = findViewById(R.id.btnMenuNav);
-        btnFridgeNav = findViewById(R.id.btnFridgeNav);
+//        btnMenuNav = findViewById(R.id.btnMenuNav);
+//        btnFridgeNav = findViewById(R.id.btnFridgeNav);
         // btnLogout = findViewById(R.id.btnLogout); // Commented out - moved to Home Menu Activity Avatar Menu
         btnFilterAll = findViewById(R.id.btnFilterAll);
         btnFilterNearExpiry = findViewById(R.id.btnFilterNearExpiry);
@@ -390,21 +424,21 @@ public class FridgeInventoryActivity extends AppCompatActivity implements Invent
         btnFilterNearExpiry.setOnClickListener(v -> filterNearExpiry(etSearch.getText().toString()));
     }
 
-    private void setupNavigationButtons() {
-        // Menu button - navigate to HomeMenuActivity
-        btnMenuNav.setOnClickListener(v -> {
-            Intent intent = new Intent(FridgeInventoryActivity.this, HomeMenuActivity.class);
-            startActivity(intent);
-        });
-
-        // Fridge button - already on fridge page
-        btnFridgeNav.setOnClickListener(v -> {
-            Toast.makeText(this, "You are already on Fridge page", Toast.LENGTH_SHORT).show();
-        });
-
-        // Logout button - Commented out, moved to Home Menu Activity Avatar Menu
-        // btnLogout.setOnClickListener(v -> showLogoutConfirmDialog());
-    }
+//    private void setupNavigationButtons() {
+//        // Menu button - navigate to HomeMenuActivity
+//        btnMenuNav.setOnClickListener(v -> {
+//            Intent intent = new Intent(FridgeInventoryActivity.this, HomeMenuActivity.class);
+//            startActivity(intent);
+//        });
+//
+//        // Fridge button - already on fridge page
+//        btnFridgeNav.setOnClickListener(v -> {
+//            Toast.makeText(this, "You are already on Fridge page", Toast.LENGTH_SHORT).show();
+//        });
+//
+//        // Logout button - Commented out, moved to Home Menu Activity Avatar Menu
+//        // btnLogout.setOnClickListener(v -> showLogoutConfirmDialog());
+//    }
 
     /**
      * Show logout confirmation dialog

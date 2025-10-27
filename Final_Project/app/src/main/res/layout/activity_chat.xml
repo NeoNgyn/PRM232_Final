@@ -16,6 +16,15 @@
         android:background="#FF9800"
         android:layout_alignParentTop="true">
 
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_arrow_back"
+            android:contentDescription="Quay lại"
+            app:tint="#FFFFFF" />
+
         <ImageView
             android:layout_width="35dp"
             android:layout_height="35dp"

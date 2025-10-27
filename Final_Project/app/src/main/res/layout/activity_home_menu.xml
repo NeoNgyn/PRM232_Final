@@ -123,8 +123,8 @@
                     android:contentDescription="Search icon"
                     android:clickable="true"
                     android:focusable="true"
-                    app:tint="#2196F3"
-                    android:background="?attr/selectableItemBackgroundBorderless" />
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    app:tint="#2196F3" />
 
             </LinearLayout>
 
@@ -138,7 +138,9 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/headerContainer"
-        android:fillViewport="true">
+        android:fillViewport="true"
+        android:paddingBottom="90dp"
+        android:clipToPadding="false">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -282,57 +284,57 @@
             </LinearLayout>
 
         <!-- Bottom Navigation Bar -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:background="@android:color/white"
-            android:elevation="8dp"
-            android:padding="12dp"
-            android:gravity="center"
-            android:layout_marginTop="24dp">
+<!--        <LinearLayout-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:orientation="horizontal"-->
+<!--            android:background="@android:color/white"-->
+<!--            android:elevation="8dp"-->
+<!--            android:padding="12dp"-->
+<!--            android:gravity="center"-->
+<!--            android:layout_marginTop="24dp">-->
 
-            <!-- Menu Button -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnMenuNav"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_weight="1"
-                android:text="🍽️ Menu"
-                android:textSize="12sp"
-                android:textColor="@android:color/white"
-                android:layout_marginEnd="8dp"
-                app:backgroundTint="#2196F3"
-                app:cornerRadius="8dp"
-                style="@style/Widget.MaterialComponents.Button" />
+<!--            &lt;!&ndash; Menu Button &ndash;&gt;-->
+<!--            <com.google.android.material.button.MaterialButton-->
+<!--                android:id="@+id/btnMenuNav"-->
+<!--                android:layout_width="0dp"-->
+<!--                android:layout_height="48dp"-->
+<!--                android:layout_weight="1"-->
+<!--                android:text="🍽️ Menu"-->
+<!--                android:textSize="12sp"-->
+<!--                android:textColor="@android:color/white"-->
+<!--                android:layout_marginEnd="8dp"-->
+<!--                app:backgroundTint="#2196F3"-->
+<!--                app:cornerRadius="8dp"-->
+<!--                style="@style/Widget.MaterialComponents.Button" />-->
 
-            <!-- Fridge Button -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnFridgeNav"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_weight="1"
-                android:text="🍒 Tủ Lạnh"
-                android:textSize="12sp"
-                android:textColor="@android:color/white"
-                app:backgroundTint="#4CAF50"
-                app:cornerRadius="8dp"
-                style="@style/Widget.MaterialComponents.Button" />
+<!--            &lt;!&ndash; Fridge Button &ndash;&gt;-->
+<!--            <com.google.android.material.button.MaterialButton-->
+<!--                android:id="@+id/btnFridgeNav"-->
+<!--                android:layout_width="0dp"-->
+<!--                android:layout_height="48dp"-->
+<!--                android:layout_weight="1"-->
+<!--                android:text="🍒 Tủ Lạnh"-->
+<!--                android:textSize="12sp"-->
+<!--                android:textColor="@android:color/white"-->
+<!--                app:backgroundTint="#4CAF50"-->
+<!--                app:cornerRadius="8dp"-->
+<!--                style="@style/Widget.MaterialComponents.Button" />-->
 
-            <!-- Logout Button - COMMENTED OUT, now accessible via Avatar Menu -->
-            <!--<com.google.android.material.button.MaterialButton
-                android:id="@+id/btnLogout"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_weight="1"
-                android:text="🚪 Đăng xuất"
-                android:textSize="12sp"
-                android:textColor="@android:color/white"
-                app:backgroundTint="#F44336"
-                app:cornerRadius="8dp"
-                style="@style/Widget.MaterialComponents.Button" />-->
+<!--            &lt;!&ndash; Logout Button - COMMENTED OUT, now accessible via Avatar Menu &ndash;&gt;-->
+<!--            &lt;!&ndash;<com.google.android.material.button.MaterialButton-->
+<!--                android:id="@+id/btnLogout"-->
+<!--                android:layout_width="0dp"-->
+<!--                android:layout_height="48dp"-->
+<!--                android:layout_weight="1"-->
+<!--                android:text="🚪 Đăng xuất"-->
+<!--                android:textSize="12sp"-->
+<!--                android:textColor="@android:color/white"-->
+<!--                app:backgroundTint="#F44336"-->
+<!--                app:cornerRadius="8dp"-->
+<!--                style="@style/Widget.MaterialComponents.Button" />&ndash;&gt;-->
 
-        </LinearLayout>
+<!--        </LinearLayout>-->
 
     </LinearLayout>
 

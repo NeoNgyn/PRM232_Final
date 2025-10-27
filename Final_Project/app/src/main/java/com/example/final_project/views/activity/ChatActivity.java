@@ -186,6 +186,7 @@
 
 package com.example.final_project.views.activity;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler; // Thêm import
 import android.os.Looper;  // Thêm import
@@ -238,6 +239,12 @@ public class ChatActivity extends AppCompatActivity implements ChatAdapter.OnRec
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
+
+        ImageButton btnBack = findViewById(R.id.btnBack);
+        btnBack.setOnClickListener(v -> {
+            Intent intent = new Intent(ChatActivity.this, HomeMenuActivity.class);
+            startActivity(intent);
+        });
 
         // --- Ánh xạ các view ---
         recyclerViewChat = findViewById(R.id.recyclerViewChat);
