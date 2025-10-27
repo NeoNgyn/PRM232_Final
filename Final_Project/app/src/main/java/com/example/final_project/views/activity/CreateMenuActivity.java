@@ -53,6 +53,7 @@ import java.util.function.Consumer;
 public class CreateMenuActivity extends AppCompatActivity {
 
     private static final int PICK_IMAGE_REQUEST = 1;
+    private static final int REQUEST_CREATE_RECIPE = 2;
     private EditText etMenuName, etMenuDescription, etFromDate, etToDate;
     private ImageView imageMenu;
     private Button btnAddRecipe;
@@ -286,6 +287,7 @@ public class CreateMenuActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+
         if (requestCode == PICK_IMAGE_REQUEST && resultCode == Activity.RESULT_OK && data != null && data.getData() != null) {
             imageUri = data.getData();
             try {
@@ -305,6 +307,11 @@ public class CreateMenuActivity extends AppCompatActivity {
                 Log.e(TAG, "Error loading picked image", e);
                 Toast.makeText(this, "Lỗi khi tải ảnh: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             }
+        } else if (requestCode == REQUEST_CREATE_RECIPE && resultCode == Activity.RESULT_OK) {
+            // User just created a new recipe, show toast and refresh available recipes
+            Toast.makeText(this, "Recipe đã được tạo! Bây giờ bạn có thể thêm vào menu.", Toast.LENGTH_LONG).show();
+            // Automatically show the recipe selection dialog again
+            showAvailableRecipesDialog();
         }
     }
 
@@ -316,6 +323,12 @@ public class CreateMenuActivity extends AppCompatActivity {
 
         if (name.isEmpty() || description.isEmpty()) {
             Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Validate: Must have at least one recipe selected
+        if (selectedRecipes.isEmpty()) {
+            Toast.makeText(this, "Vui lòng thêm ít nhất 1 recipe vào menu!", Toast.LENGTH_LONG).show();
             return;
         }
 
@@ -481,7 +494,18 @@ public class CreateMenuActivity extends AppCompatActivity {
 
             runOnUiThread(() -> {
                 if (availableRecipes.isEmpty()) {
-                    Toast.makeText(this, "Không có recipe nào khả dụng. Hãy tạo recipe mới!", Toast.LENGTH_SHORT).show();
+                    // No recipes available, show dialog to create new recipe
+                    new AlertDialog.Builder(this)
+                            .setTitle("Không có Recipe")
+                            .setMessage("Bạn chưa có recipe nào. Bạn có muốn tạo recipe mới không?")
+                            .setPositiveButton("Tạo Recipe", (dialog, which) -> {
+                                // Go to Create Recipe activity
+                                Intent intent = new Intent(this, CreateRecipeActivity.class);
+                                intent.putExtra("from_create_menu", true); // Flag to know we came from Create Menu
+                                startActivityForResult(intent, REQUEST_CREATE_RECIPE);
+                            })
+                            .setNegativeButton("Hủy", null)
+                            .show();
                     return;
                 }
 
@@ -525,6 +549,12 @@ public class CreateMenuActivity extends AppCompatActivity {
                         // Update RecyclerView to show selected recipes
                         selectedRecipeAdapter.notifyDataSetChanged();
                     }
+                })
+                .setNeutralButton("Tạo Recipe Mới", (dialog, which) -> {
+                    // User wants to create a new recipe while choosing
+                    Intent intent = new Intent(this, CreateRecipeActivity.class);
+                    intent.putExtra("from_create_menu", true);
+                    startActivityForResult(intent, REQUEST_CREATE_RECIPE);
                 })
                 .setNegativeButton("Hủy", null)
                 .show();

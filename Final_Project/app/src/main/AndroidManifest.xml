@@ -43,7 +43,8 @@
         <activity android:name=".views.activity.HomeMenuActivity" />
         <activity android:name=".views.activity.MenuDetailActivity" />
         <activity android:name=".views.activity.CreateMenuActivity" />
-        <activity android:name=".views.activity.CreateRecipeActivity" />
+        <activity android:name=".views.activity.CreateRecipeActivity"
+            android:windowSoftInputMode="adjustPan|stateAlwaysHidden" />
         <activity android:name=".views.activity.RecipeListActivity" />
         <activity android:name=".views.activity.RecipeDetailActivity" />
         <activity android:name=".views.activity.MealDetailActivity" />
