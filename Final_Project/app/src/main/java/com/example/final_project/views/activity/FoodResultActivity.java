@@ -1,9 +1,12 @@
 package com.example.final_project.views.activity;
 
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Base64;
 import android.util.Log;
+import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -57,6 +60,28 @@ public class FoodResultActivity extends AppCompatActivity {
         String confidenceText = String.format(Locale.getDefault(), "🔍 Chính xác: %.2f%%", randomConfidence)
                 .replace('.', ',');
         tvConfidence.setText(confidenceText);
+
+        // Nút quay lại trang chủ
+        ImageButton btnBack = findViewById(R.id.btnBack);
+        btnBack.setOnClickListener(v -> {
+            Intent intent = new Intent(FoodResultActivity.this, HomeMenuActivity.class);
+            startActivity(intent);
+            finish();
+        });
+
+        // Nút đi đến tủ lạnh
+        Button btnFridge = findViewById(R.id.btnFridge);
+        btnFridge.setOnClickListener(v -> {
+            Intent intent = new Intent(FoodResultActivity.this, FridgeInventoryActivity.class);
+            startActivity(intent);
+        });
+
+        // Nút tham khảo AI
+        Button btnAI = findViewById(R.id.btnAI);
+        btnAI.setOnClickListener(v -> {
+            Intent intent = new Intent(FoodResultActivity.this, ChatActivity.class);
+            startActivity(intent);
+        });
     }
 
     private void fetchNutritionFromFatSecret(String foodName) {
