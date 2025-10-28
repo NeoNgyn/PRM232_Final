@@ -237,6 +237,35 @@ public class CreateMenuActivity extends AppCompatActivity {
                         }
                     }
                 }
+                
+                // ADDED: Load recipes linked to this menu
+                String recipesSql = "SELECT r.recipe_id, r.name, r.image_url, r.instruction, r.nutrition " +
+                                   "FROM Recipe r " +
+                                   "INNER JOIN RecipeInMenu rim ON r.recipe_id = rim.recipe_id " +
+                                   "WHERE rim.menu_id = ? " +
+                                   "ORDER BY r.create_at DESC";
+                try (PreparedStatement stmt = conn.prepareStatement(recipesSql)) {
+                    stmt.setString(1, menuId);
+                    try (ResultSet rs = stmt.executeQuery()) {
+                        while (rs.next()) {
+                            Recipe recipe = new Recipe();
+                            recipe.setRecipeId(rs.getString("recipe_id"));
+                            recipe.setName(rs.getString("name"));
+                            recipe.setImageUrl(rs.getString("image_url"));
+                            recipe.setInstruction(rs.getString("instruction"));
+                            recipe.setNutrition(rs.getString("nutrition"));
+                            selectedRecipes.add(recipe);
+                            selectedRecipeIds.add(recipe.getRecipeId());
+                        }
+                    }
+                }
+                
+                // Update UI with loaded recipes
+                runOnUiThread(() -> {
+                    selectedRecipeAdapter.notifyDataSetChanged();
+                    Log.d(TAG, "Loaded " + selectedRecipes.size() + " recipes for menu: " + menuId);
+                });
+                
             } catch (Exception e) {
                 Log.e(TAG, "Error loading menu data", e);
                 runOnUiThread(() -> Toast.makeText(this, "Error loading menu data: " + e.getMessage(), Toast.LENGTH_SHORT).show());
@@ -475,6 +504,7 @@ public class CreateMenuActivity extends AppCompatActivity {
 
                 try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                     stmt.setString(1, currentUserId);
+                    
                     try (ResultSet rs = stmt.executeQuery()) {
                         while (rs.next()) {
                             Recipe recipe = new Recipe();
@@ -498,7 +528,7 @@ public class CreateMenuActivity extends AppCompatActivity {
                     // No recipes available, show dialog to create new recipe
                     new AlertDialog.Builder(this)
                             .setTitle("Không có Recipe")
-                            .setMessage("Bạn chưa có recipe nào. Bạn có muốn tạo recipe mới không?")
+                            .setMessage("Bạn chưa có recipe nào" + (isEditMode ? " khác" : "") + ". Bạn có muốn tạo recipe mới không?")
                             .setPositiveButton("Tạo Recipe", (dialog, which) -> {
                                 // Go to Create Recipe activity
                                 Intent intent = new Intent(this, CreateRecipeActivity.class);
@@ -569,16 +599,32 @@ public class CreateMenuActivity extends AppCompatActivity {
                 .setTitle("Xóa Recipe")
                 .setMessage("Bạn có chắc chắn muốn xóa \"" + recipe.getName() + "\" khỏi menu không?")
                 .setPositiveButton("Xóa", (dialog, which) -> {
-                    // Remove from lists
-                    selectedRecipes.remove(position);
-                    selectedRecipeIds.remove(recipe.getRecipeId());
-
-                    // Update RecyclerView
-                    selectedRecipeAdapter.notifyItemRemoved(position);
-                    selectedRecipeAdapter.notifyItemRangeChanged(position, selectedRecipes.size());
-
-                    Toast.makeText(this, "Đã xóa \"" + recipe.getName() + "\"", Toast.LENGTH_SHORT).show();
-                    Log.d(TAG, "Removed recipe: " + recipe.getName() + " from selection");
+                    // Remove from lists using recipe ID (safer than position-based removal)
+                    String recipeIdToRemove = recipe.getRecipeId();
+                    
+                    // Find actual position by recipe ID
+                    int actualPosition = -1;
+                    for (int i = 0; i < selectedRecipes.size(); i++) {
+                        if (selectedRecipes.get(i).getRecipeId().equals(recipeIdToRemove)) {
+                            actualPosition = i;
+                            break;
+                        }
+                    }
+                    
+                    if (actualPosition >= 0) {
+                        selectedRecipes.remove(actualPosition);
+                        selectedRecipeIds.remove(recipeIdToRemove);
+                        
+                        // Update RecyclerView
+                        selectedRecipeAdapter.notifyItemRemoved(actualPosition);
+                        selectedRecipeAdapter.notifyItemRangeChanged(actualPosition, selectedRecipes.size());
+                        
+                        Toast.makeText(this, "Đã xóa \"" + recipe.getName() + "\"", Toast.LENGTH_SHORT).show();
+                        Log.d(TAG, "Removed recipe: " + recipe.getName() + " from selection");
+                    } else {
+                        Log.w(TAG, "Recipe not found in selectedRecipes list for removal: " + recipeIdToRemove);
+                        Toast.makeText(this, "Lỗi: Không tìm thấy recipe để xóa", Toast.LENGTH_SHORT).show();
+                    }
                 })
                 .setNegativeButton("Hủy", null)
                 .show();
@@ -692,6 +738,22 @@ public class CreateMenuActivity extends AppCompatActivity {
                     stmt.setString(8, menu.getUserId());
 
                     if (stmt.executeUpdate() <= 0) throw new SQLException("Update failed. Menu not found.");
+                    
+                    // ADDED: After updating menu, sync the recipes
+                    // Delete old recipe links
+                    String deleteSql = "DELETE FROM RecipeInMenu WHERE menu_id = ?";
+                    try (PreparedStatement deleteStmt = conn.prepareStatement(deleteSql)) {
+                        deleteStmt.setString(1, menu.getMenuId());
+                        deleteStmt.executeUpdate();
+                        Log.d(TAG, "Deleted old recipes for menu: " + menu.getMenuId());
+                    }
+                    
+                    // Insert new recipe links from selectedRecipes
+                    if (!selectedRecipes.isEmpty()) {
+                        insertRecipesIntoMenu(conn, menu.getMenuId(), selectedRecipes);
+                        Log.d(TAG, "Inserted " + selectedRecipes.size() + " new recipes for menu: " + menu.getMenuId());
+                    }
+                    
                     runOnUiThread(onSuccess);
                 }
             } catch (Exception e) {
