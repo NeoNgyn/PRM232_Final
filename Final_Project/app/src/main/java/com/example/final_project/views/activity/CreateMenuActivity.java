@@ -455,7 +455,7 @@ public class CreateMenuActivity extends AppCompatActivity {
     }
 
     /**
-     * Show dialog with available recipes (not in any menu yet)
+     * Show dialog with available recipes (all user's recipes, allowing same recipe in multiple menus)
      */
     private void showAvailableRecipesDialog() {
         dbExecutor.execute(() -> {
@@ -465,11 +465,12 @@ public class CreateMenuActivity extends AppCompatActivity {
 
                 String currentUserId = UserSessionManager.getInstance(this).getCurrentUserId();
 
-                // Get recipes that are NOT in any menu yet
+                // Get ALL recipes created by the user
+                // A recipe can be in multiple menus, so we don't filter by RecipeInMenu
+                // We only exclude recipes already selected in the current editing session
                 String sql = "SELECT r.recipe_id, r.name, r.image_url, r.instruction, r.nutrition " +
                             "FROM Recipe r " +
                             "WHERE r.user_id = ? " +
-                            "AND r.recipe_id NOT IN (SELECT recipe_id FROM RecipeInMenu) " +
                             "ORDER BY r.create_at DESC";
 
                 try (PreparedStatement stmt = conn.prepareStatement(sql)) {

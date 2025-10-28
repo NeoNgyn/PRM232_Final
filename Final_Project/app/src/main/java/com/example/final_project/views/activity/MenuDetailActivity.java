@@ -51,6 +51,7 @@ public class MenuDetailActivity extends AppCompatActivity {
     private String currentToDate;
 
     private ExecutorService dbExecutor = Executors.newSingleThreadExecutor();
+    private boolean isFirstLoad = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -141,6 +142,20 @@ public class MenuDetailActivity extends AppCompatActivity {
 
         // Load menu details and recipes from database (will override if data is different)
         loadMenuDetails();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Skip reload on first load (onCreate already loads data)
+        // Only reload when returning from another activity (e.g., after adding a recipe)
+        if (!isFirstLoad) {
+            android.util.Log.d("MenuDetailActivity", "onResume called - reloading menu details");
+            loadMenuDetails();
+        } else {
+            isFirstLoad = false;
+            android.util.Log.d("MenuDetailActivity", "onResume called - skipping first load");
+        }
     }
 
     private void loadMenuDetails() {
